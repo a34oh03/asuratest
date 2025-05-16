@@ -2,9 +2,9 @@
 import { Module } from '@nestjs/common';
 import { BackupService } from './backup.service';
 import { BackupController } from './backup.controller';
-import { RankingService } from '../ranking/ranking.service';
+import { RankingService } from '../ranking.service';
 import { forwardRef } from '@nestjs/common';
-import { RankingModule } from '../ranking/ranking.module';
+import { RankingModule } from '../ranking.module';
 
 @Module({
   imports: [forwardRef(() => RankingModule)],

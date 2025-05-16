@@ -1,7 +1,7 @@
 import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
 import { BackupService } from './backup.service';
-import { RankingService } from '../ranking/ranking.service';
-import { shouldBackupBasedOnTime } from '../ranking/ranking.util';
+import { RankingService } from '../ranking.service';
+import { shouldBackupBasedOnTime } from '../ranking.util';
 
 @Controller('api/backup')
 export class BackupController {

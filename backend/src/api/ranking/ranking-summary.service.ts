@@ -1,9 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { RankingService } from './ranking.service';
-import { getCachedBackupData } from '../backup/backup-cache.util';
+import { getCachedBackupData } from './backup/backup-cache.util';
 import { parsePlayers, calculateChampionStats, getTopPlayersByChampion, compareRankings } from './ranking.util';
 import { DateTime } from 'luxon';
-import { BackupService } from '../backup/backup.service';
+import { BackupService } from './backup/backup.service';
 const CACHE_TTL = 60 * 60 * 2; // 2시간
 
 @Injectable()

@@ -5,7 +5,7 @@ import { RankingService } from './ranking.service';
 import { RankingSummaryController } from './ranking-summary.controller';
 import { RankingSummaryService } from './ranking-summary.service';
 import { forwardRef } from '@nestjs/common';
-import { BackupModule } from '../backup/backup.module';
+import { BackupModule } from './backup/backup.module';
 
 @Module({
   imports: [HttpModule, forwardRef(() => BackupModule)],
