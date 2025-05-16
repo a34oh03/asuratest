@@ -1,13 +1,9 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { RankingController } from './api/ranking/ranking.controller';
-import { RankingService } from './api/ranking/ranking.service';
+import { RankingModule } from './api/ranking/ranking.module';
+import { PingController } from './api/ranking/ping.controller';
 
 @Module({
-  imports: [HttpModule],
-  controllers: [AppController, RankingController],
-  providers: [AppService, RankingService],
+  imports: [RankingModule],
+  controllers: [PingController],
 })
 export class AppModule {}
