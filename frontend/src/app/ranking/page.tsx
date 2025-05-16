@@ -1,5 +1,5 @@
 // 🔁 서버 컴포넌트
-import { fetchRankingSummary } from '../services/rankingService';
+import { fetchRankingSummary } from './services/rankingService';
 import RankingRateLimit from './RateLimit';
 import RankingError from './RankingError';
 import RankingClient from './RankingClient'; 

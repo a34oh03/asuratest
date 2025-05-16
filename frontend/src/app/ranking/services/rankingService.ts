@@ -1,4 +1,4 @@
-import { RankingSummary } from '../ranking/types';
+import { RankingSummary } from '../types';
 
 export async function fetchRankingSummary(): Promise<RankingSummary> {
   // 실제 배포시에는 BASE_URL을 환경변수로 분리 권장
