@@ -1,0 +1,17 @@
+frontend는 page방식이 아닌, app 폴더 사용 방식
+backend는 src 폴더 사용 방식
+기능별로 폴더를 명확히 작성
+nestjs는 controller, service, module 구조로 작성, 필요 시 dto 사용
+secure coding 준수
+LOG tracing을 위한 로깅
+각 기능에 대한 주석 작성
+
+ 모든 예외 가능성이 있는 문법(JSON.parse, await, fetch, DB 쿼리 등)에 대해
+ 반드시 try/catch 또는 예외 처리를 명시적으로 작성해야 한다.
+
+임의의 값을 넣어야 하는 경우, 반드시 주석으로 명시하고 사용자에게 채팅으로 알린다.
+폴더 생성은 mkdir을 통해 작성해줘.
+리눅스가 아닌, 윈도우 환경이야.
+모든 외부 API 호출(requests, axios 등)은 try/catch 블록으로 감싸고, 실패 시 로그 출력 및 기본값 반환 처리.
+API 호출, 화면 출력, 유틸 함수는 각각 별도 모듈로 분리
+이미지의 경우 fallback 이미지 사용도 고려

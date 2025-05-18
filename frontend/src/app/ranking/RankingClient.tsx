@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { RankingSummary } from './types';
 import RankingTable from './RankingTable';
 import ChampionBarChart from './ChampionBarChart';
+import PlayerSearchBar from './PlayerSearchBar';
 
 export default function RankingClient({ data }: { data: RankingSummary }) {
   const [mode, setMode] = useState<'solo' | 'trio'>('solo');
@@ -24,6 +25,9 @@ export default function RankingClient({ data }: { data: RankingSummary }) {
 
   return (
     <div className="max-w-5xl mx-auto p-4 relative min-h-screen">
+      <div className="flex justify-end">
+        <PlayerSearchBar />
+      </div>
 
   {/* 🔽 솔로/트리오 버튼 */}
   <div className="flex gap-2 justify-center mb-4">

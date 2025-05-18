@@ -1,5 +1,6 @@
 // 랭킹 관련 유틸 함수 모음 (Python 코드 변환)
 import { Injectable } from '@nestjs/common';
+import { DateTime } from 'luxon';
 
 export const championMap: Record<number, string> = {
   1: '바쥬', 2: '파이라', 3: '바라타', 4: '무이무이', 5: '등오',
@@ -73,11 +74,11 @@ export function compareRankings(prev: any[], curr: any[]): any[] {
   });
   const result = [];
   for (let i = 0; i < curr.length; i++) {
-    const player = curr[i];
-    const curRank = i + 1;
-    const nickname = player.nickname;
-    const score = player.score;
-    const champion = player.champion ?? '-';
+    const player    = curr[i];
+    const curRank   = i + 1;
+    const nickname  = player.nickname;
+    const score     = player.score;
+    const champion  = player.champion ?? '-';
     if (!(nickname in prevMap)) {
       result.push({
         rank: curRank,
@@ -103,25 +104,14 @@ export function compareRankings(prev: any[], curr: any[]): any[] {
 }
 
 export function shouldBackupBasedOnTime(lastBackupStr: string): boolean {
-  // 오늘 00:00 이후 처음으로 실행되면 백업 수행
-  // 이미 오늘 중에 한 번 백업되었으면 스킵
-  const now = new Date();
-  const KST_OFFSET = 9 * 60; // 9시간
-  now.setMinutes(now.getMinutes() + now.getTimezoneOffset() + KST_OFFSET);
-  if (!lastBackupStr || lastBackupStr === '없음') {
-    return true;
-  }
+  // 오늘 00:00(KST) 이후 처음 실행이면 true, 이미 했으면 false
+  const now = DateTime.now().setZone('Asia/Seoul');
+  if (!lastBackupStr || lastBackupStr === '없음') return true;
   try {
-    const lastBackup = new Date(lastBackupStr.replace(/-/g, '/'));
-    lastBackup.setMinutes(lastBackup.getMinutes() + lastBackup.getTimezoneOffset() + KST_OFFSET);
-    // 오늘 00:00 기준 시각
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
-    if (lastBackup < todayStart) {
-      return true;
-    } else {
-      return false;
-    }
+    const lastBackup = DateTime.fromFormat(lastBackupStr, 'yyyy-MM-dd HH:mm:ss', { zone: 'Asia/Seoul' });
+    if (!lastBackup.isValid) return true;
+    const todayStart = now.startOf('day');
+    return lastBackup < todayStart;
   } catch {
     return true;
   }

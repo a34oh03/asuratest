@@ -76,7 +76,7 @@ export default function RankingTable({ players }: Props) {
                         scoreChange > 0 ? 'text-red-600' : 'text-blue-600'
                       }`}
                     >
-                      ({scoreChange > 0 ? `↑${scoreChange.toLocaleString()}` : `↓${Math.abs(scoreChange).toLocaleString()}`})
+                      ({scoreChange > 0 ? `+${scoreChange.toLocaleString()}` : `-${Math.abs(scoreChange).toLocaleString()}`})
                     </span>
                   )}
                 </td>

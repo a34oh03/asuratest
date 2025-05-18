@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { RankingController } from './api/ranking/ranking.controller';
-import { RankingService } from './api/ranking/ranking.service';
+import { ConfigModule } from '@nestjs/config';
+import { RankingModule } from './api/ranking/ranking.module';
+import { PlayerMatchModule } from './api/playerMatch/playerMatch.module';
+import { PingController } from './api/ranking/ping.controller';
 
 @Module({
-  imports: [HttpModule],
-  controllers: [AppController, RankingController],
-  providers: [AppService, RankingService],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }), // .env 환경변수 자동 로딩
+    RankingModule,
+    PlayerMatchModule,
+  ],
+  controllers: [PingController],
 })
 export class AppModule {}
