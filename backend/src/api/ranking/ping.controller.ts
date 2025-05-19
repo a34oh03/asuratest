@@ -16,7 +16,7 @@ export class PingController {
       message: `pong`,
       remote: remoteAddr || req.ip || '',
       lastAccessTime,
-      info: `접속시각 갱신, ${WAKE_UP_INTERVAL_MIN}분마다 ping 권장`,
+      info: `접속시각 갱신, ${WAKE_UP_INTERVAL_MIN}분마다 ping 으로 서버 깨우기`,
     };
   }
 }

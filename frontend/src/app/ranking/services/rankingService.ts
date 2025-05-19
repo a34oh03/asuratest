@@ -7,8 +7,8 @@ export async function fetchRankingSummary(): Promise<RankingSummary> {
   console.log('[fetchRankingSummary] 요청 URL:', url);
 
   const res = await fetch(url, { cache: 'no-store' });
-  console.log('[fetchRankingSummary] 응답 상태:', res.status);
-
+  if (res.status === 429) throw new Error('rate-limit');
+  if (res.status === 400) throw new Error('bad-request');
   if (!res.ok) throw new Error('Failed to fetch ranking summary');
   return res.json();
 }

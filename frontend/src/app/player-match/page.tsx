@@ -280,8 +280,8 @@ function AllStats({
         top3Count: e.top3Count,
         avgRank:  e.rankCount > 0 ? Number((e.sumRank / e.rankCount).toFixed(2)) : 0,
         avgTK:    Number((e.sumTK   / e.games).toFixed(2)),
-        avgDmgPut:Math.round(e.sumDmgPut / e.games),
-        avgDmgGot:Math.round(e.sumDmgGot / e.games),
+        avgDmgPut: isNaN(e.sumDmgPut / e.games) ? '0' : Math.round(e.sumDmgPut / e.games).toLocaleString(),
+        avgDmgGot: isNaN(e.sumDmgGot / e.games) ? '0' : Math.round(e.sumDmgGot / e.games).toLocaleString(),
         avgScore: e.games > 0 ? Number((e.sumScore / e.games).toFixed(2)) : 0,
       }));
   }

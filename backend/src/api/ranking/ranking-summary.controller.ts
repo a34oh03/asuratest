@@ -16,7 +16,7 @@ export class RankingSummaryController {
     console.log('[GET /ranking/summary] 전체 URL:', req.url);
     // 서버 내부에서만 관리하는 userID 리스트 (예시)
     ////userNetIDs ? userNetIDs.split(',').filter(Boolean) : [];
-    const userList = ["76561198112838034"]; // 실제 유효한 userID를 배열로 넣어야 함
+    const userList = ["76561199543345410","76561198112838034"]; // 실제 유효한 userID를 배열로 넣어야 함
     return this.summaryService.getRankingSummary(userList);
   }
 }

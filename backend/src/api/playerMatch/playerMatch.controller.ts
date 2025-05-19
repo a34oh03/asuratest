@@ -7,8 +7,8 @@ import { ViewMatchStatsDto } from './dto/view-match-stats.dto';
 import { ViewMatchRecordDto } from './dto/view-match-record.dto';
 
 // 실제 서비스 환경에서는 아래 값을 환경변수로 분리해야 합니다.
-const USER_NET_ID = '76561199543345410'; // TODO: 실서비스 시 환경변수로 분리
-const SESSION_SECRET = '2a95431a72dc2fb33efcc1f3febf3a00'; // TODO: 실서비스 시 환경변수로 분리
+const USER_NET_ID = '76561198112838034'; // TODO: 실서비스 시 환경변수로 분리
+const SESSION_SECRET = '5fc0243056bd740c5c140499040e60f7'; // TODO: 실서비스 시 환경변수로 분리
 
 @Controller('player-match')
 export class PlayerMatchController {

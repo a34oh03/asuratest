@@ -5,9 +5,15 @@ import { RankingSummary } from './types';
 import RankingTable from './RankingTable';
 import ChampionBarChart from './ChampionBarChart';
 import PlayerSearchBar from './PlayerSearchBar';
+import { fetchRankingSummary } from './services/rankingService';
+import RankingRateLimit from './RateLimit';
+import RankingError from './RankingError';
 
-export default function RankingClient({ data }: { data: RankingSummary }) {
+export default function RankingClient() {
   const [mode, setMode] = useState<'solo' | 'trio'>('solo');
+  const [data, setData] = useState<RankingSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('selectedMode');
@@ -20,6 +26,28 @@ export default function RankingClient({ data }: { data: RankingSummary }) {
     localStorage.setItem('selectedMode', mode);
   }, [mode]);
 
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetchRankingSummary()
+      .then((res: any) => {
+        setData(res);
+        setError(null);
+      })
+      .catch((e: any) => {
+        if (e.message === 'rate-limit') setError('429');
+        else if (e.message === 'bad-request') setError('400');
+        else setError('generic');
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div>로딩중...</div>;
+  if (error === '429') return <RankingRateLimit />;
+  if (error === '400') return <RankingError />;
+  if (error) return <RankingError />;
+  if (!data) return <RankingError />;
+
   const now = data.now_time;
   const last = data.last_backup;
 
@@ -28,37 +56,35 @@ export default function RankingClient({ data }: { data: RankingSummary }) {
       <div className="flex justify-end">
         <PlayerSearchBar />
       </div>
-
-  {/* 🔽 솔로/트리오 버튼 */}
-  <div className="flex gap-2 justify-center mb-4">
-    <button
-      className={`px-4 py-2 rounded shadow ${mode === 'solo' ? 'bg-blue-600 text-white' : 'bg-gray-200 '}`}
-      onClick={() => setMode('solo')}
-    >
-      솔로
-    </button>
-    <button
-      className={`px-4 py-2 rounded shadow ${mode === 'trio' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-      onClick={() => setMode('trio')}
-    >
-      트리오
-    </button>
-  </div>
-  {/* ✅ 제목 + 업데이트 시간 한 줄 정렬 */}
-  <div className="flex justify-between items-center mb-4">
-    <h1 className="text-2xl font-bold text-left">
-      Top 100 랭커 ({mode === 'solo' ? '솔로' : '트리오'})
-    </h1>
-    <div className="text-xs text-gray-400 text-left leading-tight">
-      <div>
-        이전 업데이트 시간: {last || '-'}
+      {/* 🔽 솔로/트리오 버튼 */}
+      <div className="flex gap-2 justify-center mb-4">
+        <button
+          className={`px-4 py-2 rounded shadow ${mode === 'solo' ? 'bg-blue-600 text-white' : 'bg-gray-200 '}`}
+          onClick={() => setMode('solo')}
+        >
+          솔로
+        </button>
+        <button
+          className={`px-4 py-2 rounded shadow ${mode === 'trio' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => setMode('trio')}
+        >
+          트리오
+        </button>
       </div>
-      <div>
-        최근 업데이트 시간: {now}
+      {/* ✅ 제목 + 업데이트 시간 한 줄 정렬 */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-left">
+          Top 100 랭커 ({mode === 'solo' ? '솔로' : '트리오'})
+        </h1>
+        <div className="text-xs text-gray-400 text-left leading-tight">
+          <div>
+            이전 업데이트 시간: {last || '-'}
+          </div>
+          <div>
+            최근 업데이트 시간: {now}
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-
       <RankingTable players={mode === 'solo' ? data.solo_players : data.trio_players} mode={mode} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
         <ChampionBarChart
