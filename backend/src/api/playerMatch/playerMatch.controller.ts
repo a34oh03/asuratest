@@ -8,7 +8,7 @@ import { ViewMatchRecordDto } from './dto/view-match-record.dto';
 
 // 실제 서비스 환경에서는 아래 값을 환경변수로 분리해야 합니다.
 const USER_NET_ID = '76561198112838034'; // TODO: 실서비스 시 환경변수로 분리
-const SESSION_SECRET = '5fc0243056bd740c5c140499040e60f7'; // TODO: 실서비스 시 환경변수로 분리
+const SESSION_SECRET = '1009528dc5dddb6925a093bd996ccb5e'; // TODO: 실서비스 시 환경변수로 분리
 
 @Controller('player-match')
 export class PlayerMatchController {
@@ -32,9 +32,9 @@ export class PlayerMatchController {
     } catch (error) {
       this.logger.error('getMatchStats 오류', error);
       if (error instanceof NotFoundException) {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ message: '잘못된 닉네임 조회' });
       }
-      return res.status(500).json({ message: '통계 조회 실패' });
+      return res.status(401).json({ message: '주인장 세션 만료' });
     }
   }
 
@@ -56,7 +56,7 @@ export class PlayerMatchController {
       if (error instanceof NotFoundException) {
         return res.status(404).json({ message: error.message });
       }
-      return res.status(500).json({ message: '전적 조회 실패' });
+      return res.status(401).json({ message: '전적 조회 실패' });
     }
   }
 }

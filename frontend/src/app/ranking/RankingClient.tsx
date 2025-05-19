@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RankingSummary } from './types';
 import RankingTable from './RankingTable';
 import ChampionBarChart from './ChampionBarChart';
@@ -10,6 +10,8 @@ import RankingRateLimit from './RateLimit';
 import RankingError from './RankingError';
 
 export default function RankingClient() {
+  const fetched = useRef(false);
+
   const [mode, setMode] = useState<'solo' | 'trio'>('solo');
   const [data, setData] = useState<RankingSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,9 @@ export default function RankingClient() {
   }, [mode]);
 
   useEffect(() => {
+    if (fetched.current) return;  // 이미 실행되었으면 무시
+    fetched.current = true;
+    
     setLoading(true);
     setError(null);
     fetchRankingSummary()

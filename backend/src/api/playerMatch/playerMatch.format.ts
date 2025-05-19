@@ -151,8 +151,11 @@ export function formatSingleMatchRecord(rec: any) {
   // 아이템 정보 가공
   const items = [1,4,3,5,6,2].map((s) => {
     const idx = rec[`astraIndex${s}`] || 0;
+    return `${ITEM_NAMES[idx] || idx}`;
+  });
+  const astra = [1,4,3,5,6,2].map((s) => {
     const lv = rec[`astraLv${s}`] || 0;
-    return `${ITEM_NAMES[idx] || idx}(${lv})`;
+    return `${lv}`;
   });
 
   return {
@@ -175,6 +178,7 @@ export function formatSingleMatchRecord(rec: any) {
     region,
     playTime,
     items: items.join(', '),
+    astra: astra.join(', '),
   };
 
 }

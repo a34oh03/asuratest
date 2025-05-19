@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { ReactNode, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import PlayerMatchTabs, { TabType } from "./PlayerMatchTabs";
 
 import PlayerProfile from "./PlayerProfile";
 import { calcTotalRP } from './util/calcTotalRP';
 import { t, Locale } from "./i18n";
-import ImageWithFallback from "./ImageWithFallback";
+import CachedImageWithFallback from "./CachedImageWithFallback";
 import ChampionPieChart from "./ChampionPieChart";
 import {
   fetchPlayerMatchStats,
@@ -36,13 +36,14 @@ export default function PlayerMatchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   // 닉네임 상태 및 입력값 상태 관리
+    // error 상태를 ReactNode로 선언합니다.
   const [nickname, setNickname] = useState<string>("");
   const [searchNickname, setSearchNickname] = useState<string>("");
   const [tab, setTab] = useState<TabType>("all");
   const [stats, setStats] = useState<StatsData | null>(null);
   const [record, setRecord] = useState<RecordData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<ReactNode>("");
 
   // 최초 진입 시 쿼리스트링(viewNickname) 반영
   useEffect(() => {
@@ -83,27 +84,60 @@ export default function PlayerMatchPage() {
     async function fetchData() {
       setLoading(true);
       setError("");
+
       try {
-        const statsResp = await fetchPlayerMatchStats(searchNickname);
+        const statsResp  = await fetchPlayerMatchStats(searchNickname);
         const recordResp = await fetchPlayerMatchRecord(searchNickname);
-        if (!statsResp || !recordResp) {
-          setStats(null);
-          setRecord(null);
-          setError("존재하지 않는 닉네임이거나 데이터를 찾을 수 없습니다.");
-          return;
-        }
         setStats(statsResp);
         setRecord(recordResp);
       } catch (e: any) {
+        console.error("fetchData 에러:", e);
+
         setStats(null);
         setRecord(null);
-        setError(e?.message || "데이터를 불러올 수 없습니다.");
+
+        const msg = e.message as string;
+
+        if (msg.includes("404")) {
+          setError(
+            <div className="flex flex-col items-center space-y-4">
+              <img
+                src="/static/error_image.png"
+                alt="존재하지 않는 닉네임"
+                className="w-45 h-45"
+              />
+              <span>존재하지 않는 닉네임입니다.</span>
+            </div>
+          );
+        } else if (msg.includes("401")) {
+          // 이미지 + 문구 + 하이퍼링크 조합 JSX
+          setError(
+            <div className="flex flex-col items-center space-y-4">
+              <img
+                src="/static/rate_limit.png"
+                alt="세션 만료"
+                className="w-45 h-45"
+              />
+              <span>주인장 세션이 만료되어서 못봐요.</span>
+              <a
+                href="https://gall.dcinside.com/asurajang/11788"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                https://gall.dcinside.com/asurajang/11788
+              </a>
+            </div>
+          );
+        } else {
+          setError("알 수 없는 오류가 발생했습니다.");
+        }
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [searchNickname]);
+  }, [searchNickname])
 
   return (
     <div className="max-w-5xl mx-auto p-4">
@@ -147,10 +181,12 @@ export default function PlayerMatchPage() {
         <svg className="w-8 h-8 mb-2 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
         {t(locale, 'loading')}
       </div>}
-      {/* 에러 */}
-      {error && <div className="text-center text-red-500 py-6">
-        <span className="font-bold">⚠</span> {error}
-      </div>}
+      {/* 에러 메시지 */}
+      {error && (
+        <div className="text-center text-black py-35">
+          {error}
+        </div>
+      )}
       {/* 통계 & 전적 */}
       {!loading && !error && stats && record && (
         <>
@@ -468,11 +504,11 @@ function AllStats({
                {champSummaryByMode.length > 0 ? champSummaryByMode.map((row, idx) => (
                 <tr key={idx} className="border-t">
                   <td className="p-2 flex items-center space-x-2">
-                    <img
+                    <CachedImageWithFallback
                       src={`/champion/${row.champName}.png`}
+                      fallback="/champion/default.png"
                       alt={row.champName}
                       className="w-8 h-8 rounded-full border"
-                      onError={e => { (e.target as HTMLImageElement).src = '/champion/default.png'; }}
                     />
                     <span>{row.champName} ({row.games}회)</span>
                   </td>
@@ -583,7 +619,7 @@ function StatsBlock({ title, stats, locale }: { title: string, stats: any, local
                     key={i}
                     className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded text-xs"
                   >
-                    <ImageWithFallback
+                    <CachedImageWithFallback
                       src={`/champion/${ch.champName}.png`}
                       fallback="/champion/default.png"
                       alt={ch.champName}
@@ -621,109 +657,127 @@ function MatchRecordsBlockList({
   }
 
   return (
-    <div className="my-6 space-y-4">
-      {records.map((rec, idx) => (
-        <div
-          key={`${rec.rank}-${idx}`}
-          className="border border-gray-300 rounded-lg bg-white p-4 flex items-center space-x-6 shadow-sm"
-        >
-          {/* 1) 순위 · 모드 · 시간 블록 */}
-          <div className="flex flex-col text-sm w-25 flex-none">
-            {/* 순위: rec.rank */}
-            <span className="font-bold text-lg">#{Number(rec.rank)}</span>
-            {/* 모드: rec.mode */}
-            <span>{rec.mode}</span>
-            {/* 시간: rec.time */}
-            <span className="text-gray-500">{rec.playTime}</span>
-            {/* 경과: rec.elapsed */}
-            <span className="text-gray-500">{rec.elapsed}</span>
-          </div>
+    <div className="my-6 space-y-4 ">
+      {records.map((rec, idx) => {
+        const rankNum = Number(rec.rank);
 
-          {/* 2) 챔피언 이미지 */}
-          <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden flex-shrink-0">
-            <ImageWithFallback
-              src={`/champion/${rec.champ}.png`}
-              fallback="/champion/default.png"
-              alt={rec.champ}
-              className="w-full h-full object-cover"
-            />
-          </div>
+        // 왼쪽 컬러 바 설정 
+        let leftColor = "border-l-8 border-l-gray-400";       // 기본
+        if (rankNum === 1)      leftColor = "border-l-8 border-l-yellow-300";
+        else if (rankNum === 2) leftColor = "border-l-8 border-l-blue-400";
+        else if (rankNum === 3) leftColor = "border-l-8 border-l-red-400";
 
-          {/* 3) 중앙 정보 그리드 */}
-          <div className="flex-1 grid grid-cols-4 gap-x-4 text-sm items-center">
-            {/* TK / K / A */}
-            <div className="flex flex-col items-center">
-              <span className="font-semibold">
-                {rec.teamsKill} / {rec.myKill} / {rec.assists}
-              </span>
-              <span className="text-xs text-gray-500">TK / K / A</span>
+        return (
+          <div
+            key={`${rec.rank}-${idx}`}
+            className={`
+              relative flex items-center space-x-6 bg-white rounded-lg p-4
+              shadow-sm
+              border-1 border-gray-300      /* ← 전체 테두리 진하게 */
+              ${leftColor}              /* ← 왼쪽 컬러 바 */
+            `}
+          >
+            {/* 1) 순위 · 모드 · 시간 블록 */}
+            <div className="flex flex-col text-sm w-25 flex-none">
+              <span className="font-bold text-lg">#{rankNum}</span>
+              <span>{rec.mode}</span>
+              <span className="text-gray-500">{rec.playTime}</span>
+              <span className="text-gray-500">{rec.elapsed}</span>
             </div>
 
-            {/* RP */}
-            <div className="flex flex-col items-center">
-              <span className="flex items-baseline">
+            {/* 2) 챔피언 이미지 */}
+            <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden flex-shrink-0">
+              <CachedImageWithFallback
+                src={`/champion/${rec.champ}.png`}
+                fallback="/champion/default.png"
+                alt={rec.champ}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* 3) 중앙 정보 그리드 */}
+            <div className="flex-1 grid grid-cols-4 gap-x-4 text-sm items-center">
+              <div className="flex flex-col items-center">
                 <span className="font-semibold">
-                  {Number(rec.totalRP).toLocaleString()}
+                  {rec.teamsKill} / {rec.myKill} / {rec.assists}
                 </span>
-                <span
-                  className={`ml-1 font-bold ${
-                    String(rec.delta).startsWith('-')
-                      ? 'text-blue-600'
-                      : 'text-red-600'
-                  }`}
-                >
-                  ({rec.delta})
+                <span className="text-xs text-gray-500">TK / K / A</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="flex items-baseline">
+                  <span className="font-semibold">
+                    {Number(rec.totalRP).toLocaleString()}
+                  </span>
+                  <span
+                    className={`ml-1 font-bold ${
+                      String(rec.delta).startsWith('-')
+                        ? 'text-blue-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    ({rec.delta})
+                  </span>
                 </span>
-              </span>
-              {/* RP 등급: rec.rpLabel (백엔드에 없으면 rec.mmr 이용하거나 표시 안함) */}
-              {rec.rpLabel ? (
-                <span className="text-xs text-gray-500">{rec.rpLabel}</span>
-              ) : (
-                <span className="text-xs text-gray-500">
-                  {/* rec.rpLabel이 없으므로 rec.mmr 표시 */}
-                  MMR: {rec.mmr}
+                {rec.rpLabel ? (
+                  <span className="text-xs text-gray-500">{rec.rpLabel}</span>
+                ) : (
+                  <span className="text-xs text-gray-500">MMR: {rec.mmr}</span>
+                )}
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="font-semibold">
+                  {(rec.dmgPut).toLocaleString()}
                 </span>
-              )}
-            </div>
-
-            {/* 입힌 피해량 */}
-            <div className="flex flex-col items-center">
-              <span className="font-semibold">
-                {(rec.dmgPut).toLocaleString()}
-              </span>
-              <span className="text-xs text-gray-500">입힌 피해량</span>
-            </div>
-
-            {/* 받은 피해량 */}
+                <span className="text-xs text-gray-500">입힌 피해량</span>
+              </div>
+               {/* 받은 피해량 */}
             <div className="flex flex-col items-center">
               <span className="font-semibold">
                 {(rec.dmgGot).toLocaleString()}
               </span>
               <span className="text-xs text-gray-500">받은 피해량</span>
             </div>
-          </div>
-
-          {/* 4) 장비 슬롯 (items가 없으면 표시 안 함) */}
-          {rec.items ? (
-            <div className="grid grid-cols-3 gap-1 flex-shrink-0">
-              {rec.items.split(',').map((item: string, i: number) => (
-                <div
-                  key={i}
-                  className="w-10 h-10 border border-gray-300 flex items-center justify-center"
-                >
-                  <img
-                    src={`/item/${item.trim()}.png`}
-                    alt={item.trim()}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              ))}
             </div>
-          ) : (
-            <div className="text-xs text-gray-400">장비 정보 없음</div>
-          )}
-        </div>
-      ))}
+
+            {/* 4) 장비 슬롯 */}
+            {rec.items ? (
+              <div className="grid grid-cols-3 gap-1">
+                {(() => {
+                  const names = rec.items.split(',').map((s: string) => s.trim());
+                  const levels = rec.astra.split(',').map((s: string) => s.trim());
+                  const len = Math.min(names.length, levels.length);
+                  return names.slice(0, len).map((name: string, i: number) => {
+                    const level = levels[i];
+                    return (
+                      <div
+                        key={i}
+                        className="relative w-12 h-12 border border-gray-300 overflow-hidden rounded"
+                      >
+                        <CachedImageWithFallback
+                          src={`/item/${name}.png`}
+                          fallback="/item/default.png"
+                          alt={name}
+                          className="w-full h-full object-contain"
+                        />
+                        <span className="
+                          absolute bottom-0 right-0
+                          bg-black bg-opacity-50
+                          text-yellow-300 text-[10px] font-bold
+                          px-0.5
+                        ">
+                          {level}↑
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            ) : (
+              <div className="text-xs text-gray-400">장비 정보 없음</div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
