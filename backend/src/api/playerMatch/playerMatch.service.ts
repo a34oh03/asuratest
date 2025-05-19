@@ -59,19 +59,7 @@ export class PlayerMatchService {
           mostPlayedChampType,
           mostPlayedChampName,
         };
-      } else {
-        // 누적 rankPoint 및 Δ(증감) 포함, 최신순 정렬
-        const summary = summarizeRecentMatches(data.matchRecords);
-        const champSummary = summarizeRecentMatchesByChampion(data.matchRecords);
-        return {
-          nickname: data.nickname,
-          passLevel: data.passLevel,
-          matchRecords: Array.isArray(data.matchRecords)
-            ? data.matchRecords.map((rec: any) => formatSingleMatchRecord(rec))
-            : [],
-          summary,
-          champSummary,
-        };
+      
       }
     } catch (error) {
       this.logger.error('viewMatchStats API 오류', error);
@@ -123,9 +111,9 @@ export class PlayerMatchService {
           nickname: data.nickname,
           passLevel: data.passLevel,
           // 누적 RP(totalRP) 계산 및 추가
-            matchRecords: Array.isArray(data.matchRecords)
-              ? data.matchRecords.map((rec: any) => formatSingleMatchRecord(rec))
-              : [],
+          matchRecords: Array.isArray(data.matchRecords)
+            ? data.matchRecords.map((rec: any) => formatSingleMatchRecord(rec))
+            : [],
           summary,
           champSummary,
         };

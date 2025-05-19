@@ -13,7 +13,7 @@ import {
   fetchPlayerMatchStats,
   fetchPlayerMatchRecord,
 } from "./api";
-// 유틸 함수 import 제거 (백엔드에서 가공된 값만 사용)
+import { Console } from "console";
 
 interface StatsData {
   brSoloStats: any;
@@ -141,35 +141,273 @@ export default function PlayerMatchPage() {
           mostPlayedChampName={stats.mostPlayedChampName}
         />
       )}
-      <PlayerMatchTabs current={tab} onChange={setTab} />
+
+      {/* 로딩 */}
       {loading && <div className="flex flex-col items-center py-8 text-gray-500 animate-pulse">
         <svg className="w-8 h-8 mb-2 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
         {t(locale, 'loading')}
       </div>}
+      {/* 에러 */}
       {error && <div className="text-center text-red-500 py-6">
         <span className="font-bold">⚠</span> {error}
       </div>}
+      {/* 통계 & 전적 */}
       {!loading && !error && stats && record && (
         <>
-          {tab === "all" && (
-            <AllStats stats={stats} record={record} locale={locale} />
-          )}
-          {tab === "solo" && (
-            <SoloStats stats={stats?.brSoloStats} record={record} locale={locale} />
-          )}
-          {tab === "trio" && (
-            <TrioStats stats={stats?.brTrioStats} record={record} locale={locale} />
-          )}
+        <AllStats
+          stats={stats}
+          record={record}
+          locale={locale}
+          mode={tab}
+          setMode={setTab}
+        />
         </>
       )}
     </div>
   );
 }
 
-function AllStats({ stats, record, locale }: { stats: StatsData | null, record: RecordData | null, locale: Locale }) {
-  if (!stats || !record) return <div className="p-4 bg-gray-100 rounded">{t(locale, 'noData')}</div>;
+interface AllStatsProps {
+  stats: StatsData | null;
+  record: RecordData | null;
+  locale: Locale;
+  mode: TabType;
+  setMode: (mode: TabType) => void;
+}
 
-  // 네모 박스 색상 함수 (1,2,3등 구분)
+function AllStats({
+  stats,
+  record,
+  locale,
+  mode,
+  setMode,
+}: AllStatsProps) {
+  // 데이터 유효성 검사
+  if (!stats || !record) {
+    return (
+      <div className="p-4 bg-gray-100 rounded text-center">
+        {t(locale, 'noData')}
+      </div>
+    );
+  }
+
+  // ===================================================================
+  // 1) RP 계산 (솔로/트리오)
+  // ===================================================================
+  const soloBaseRP = stats.brSoloStats?.rankPoint ?? 0;
+  const trioBaseRP = stats.brTrioStats?.rankPoint ?? 0;
+
+  const soloRecords = (record.matchRecords ?? []).filter(
+    r => Number(r.teamMode) === 1
+  );
+  console.log("soloRecords : ",soloRecords);
+  const trioRecords = (record.matchRecords ?? []).filter(
+    r => Number(r.teamMode) === 2
+  );
+  const allRecords = [...soloRecords, ...trioRecords]
+  .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+
+  function getChampSummary(records: any[]) {
+    interface Entry {
+      champName: string;
+      games: number;
+      rankCount: number;    // rank>0인 경기 수
+      sumRank: number;      // rank>0인 등수 합계
+      winCount: number;     // rank===1인 경기 수
+      top3Count: number;    // rank<=3인 경기 수
+      sumTK: number;
+      sumDmgPut: number;
+      sumDmgGot: number;
+      sumScore: number;
+    }
+  
+    const map = new Map<string, Entry>();
+  
+    records.forEach(r => {
+      const name = r.champName || r.champ || 'Unknown';
+      // 원본이 문자열 콤마 포함 숫자라면 파싱
+      const rank = parseInt(String(r.rank), 10) || 0;
+      const tk   = parseInt(String(r.teamsKill).replace(/,/g, ''), 10) || 0;
+      const put  = parseInt(String(r.dmgPut).replace(/,/g, ''), 10) || 0;
+      const got  = parseInt(String(r.dmgGot).replace(/,/g, ''), 10) || 0;
+      const score= Number(r.delta) || 0;
+  
+      let e = map.get(name);
+      if (!e) {
+        e = {
+          champName: name,
+          games: 0,
+          rankCount: 0,
+          sumRank: 0,
+          winCount: 0,
+          top3Count: 0,
+          sumTK: 0,
+          sumDmgPut: 0,
+          sumDmgGot: 0,
+          sumScore: 0,
+        };
+        map.set(name, e);
+      }
+  
+      e.games += 1;
+  
+      // rank>0인 경우만 rankCount, sumRank에 반영
+      if (rank > 0) {
+        e.rankCount += 1;
+        e.sumRank   += rank;
+  
+        if (rank === 1) {
+          e.winCount += 1;
+          e.top3Count += 1; // 1등도 top3에 포함
+        } else if (rank <= 3) {
+          e.top3Count += 1;
+        }
+      }
+  
+      e.sumTK     += tk;
+      e.sumDmgPut += put;
+      e.sumDmgGot += got;
+      e.sumScore  += score;
+    });
+  
+    // 엔트리를 배열로 변환, games 내림차순 정렬 후 평균 계산
+    return Array.from(map.values())
+      .sort((a, b) => b.games - a.games)
+      .map(e => ({
+        champName: e.champName,
+        games: e.games,
+        winCount: e.winCount,
+        top3Count: e.top3Count,
+        avgRank:  e.rankCount > 0 ? Number((e.sumRank / e.rankCount).toFixed(2)) : 0,
+        avgTK:    Number((e.sumTK   / e.games).toFixed(2)),
+        avgDmgPut:Math.round(e.sumDmgPut / e.games),
+        avgDmgGot:Math.round(e.sumDmgGot / e.games),
+        avgScore: e.games > 0 ? Number((e.sumScore / e.games).toFixed(2)) : 0,
+      }));
+  }
+
+  const champSummaryByMode = 
+    mode === 'solo'
+      ? getChampSummary(soloRecords)
+      : mode === 'trio'
+      ? getChampSummary(trioRecords)
+      : getChampSummary(allRecords)
+  const soloWithRP = calcTotalRP(soloRecords, soloBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+  const trioWithRP = calcTotalRP(trioRecords, trioBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+
+  // 전체(솔로+트리오)를 모아서 시간 내림차순 정렬 → 최근 20개
+  const allWithRP = [...soloWithRP, ...trioWithRP]
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+  // ===================================================================
+  // 2) 프론트엔드용 '최근 N경기 요약' 헬퍼 함수
+  //    백엔드의 summarizeRecentMatches와 동일 로직을 재구현
+  // ===================================================================
+  function getRecentSummary(recordsArr: any[]) {
+    // 1) 앞에서 n개 (최신순으로 정렬되어 있다고 가정)
+    const recent = recordsArr
+  
+    // 헬퍼: 문자열 숫자 → number (콤마 제거)
+    const toNum = (v: any) => {
+      if (v == null) return 0;
+      const s = String(v).replace(/,/g, '');
+      const x = Number(s);
+      return Number.isFinite(x) ? x : 0;
+    };
+  
+    // 2) 등수(rank) 배열: parseInt 후 0 이상만
+    const ranks = recent
+      .map(r => {
+        const v = parseInt(String(r.rank), 10);
+        return Number.isNaN(v) ? null : v;
+      })
+      .filter((x): x is number => x !== null);
+
+    // 2) 0등(강제 탈주) 개수 계산
+    const zeroCount = ranks.filter(r => r === 0).length;
+    // 3) 유효 등수 개수 (전체 경기수에서 0등 개수만큼 차감)
+    const validCount = ranks.length - zeroCount;
+    
+    const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+    const totalRank = sum(ranks);
+
+    const avg = (arr: number[]) => (arr.length ? sum(arr) / arr.length : 0);
+    // 3) 기본 통계
+    const avgRank = validCount > 0
+      ? Number((totalRank / validCount).toFixed(2))
+      : 0;
+      
+    const winCount = ranks.filter(r => r === 1).length;
+    const top3Count = ranks.filter(r => r > 0 && r <= 3).length;
+    console.log("ranks", ranks);
+    // 4) TK(teamsKill) 평균
+    const tks = recent.map(r => toNum(r.teamsKill));
+    const avgTK = Number(avg(tks).toFixed(2));
+  
+    // 5) 입힌 피해량(dmgPut) 평균
+    const dmgPuts = recent.map(r => toNum(r.dmgPut));
+    const avgDmgPut = Math.round(avg(dmgPuts));
+  
+    // 6) 받은 피해량(dmgGot) 평균
+    const dmgGots = recent.map(r => toNum(r.dmgGot));
+    const avgDmgGot = Math.round(avg(dmgGots));
+
+    const champName = recent.map(r => r.champName || r.champ || 'Unknown');
+    return {
+      recentRanks: ranks,    // 렌더링 시 .slice().reverse() 로 순서 반전
+      avgRank,               // 소수점 2자리까지
+      winCount,              
+      top3Count,             
+      avgTK,                 
+      avgDmgPut,             
+      avgDmgGot,  
+      champName,           
+    };
+  }
+
+  // ===================================================================
+  // 3) mode 에 따라 요약 데이터 선택
+  //    - 'solo', 'trio' 모드는 헬퍼 함수 사용
+  //    - 'all' 모드는 백엔드에서 온 record.summary 사용
+  // ===================================================================
+
+  const summaryData =
+    mode === 'solo'
+      ? getRecentSummary(soloRecords)
+      : mode === 'trio'
+      ? getRecentSummary(trioRecords)
+      : getRecentSummary(allRecords)
+
+  // 화면에 뿌릴 statsArr, recentRanks
+  const statsArr = [
+    { label: '평균 TK', value: summaryData?.avgTK ?? '-' },
+    { label: '평정 횟수', value: summaryData?.winCount ?? '-' },
+    { label: 'TOP 3', value: summaryData?.top3Count ?? '-' },
+    { label: '평균 등수', value: summaryData?.avgRank ?? '-' },
+    {
+      label: '평균 피해량',
+      value: summaryData?.avgDmgPut?.toLocaleString() ?? '-',
+    },
+    {
+      label: '평균 받은 피해량',
+      value: summaryData?.avgDmgGot?.toLocaleString() ?? '-',
+    },
+  ];
+  const recentRanks: number[] = summaryData?.recentRanks ?? [];
+
+  // ===================================================================
+  // 4) 보여줄 전적 배열 결정
+  // ===================================================================
+  const recordsToShow =
+    mode === 'solo'
+      ? soloWithRP
+      : mode === 'trio'
+      ? trioWithRP
+      : allWithRP;
+
+  // ===================================================================
+  // 5) 순위 박스 색상 함수 (1~3등 강조)
+  // ===================================================================
   const boxClass = (n: number) => {
     if (n === 1) return 'bg-yellow-200';
     if (n === 2) return 'bg-blue-200';
@@ -177,199 +415,135 @@ function AllStats({ stats, record, locale }: { stats: StatsData | null, record: 
     return 'bg-gray-100';
   };
 
-  // 상단 요약 통계
-  const statsArr = [
-    { label: '평균 TK', value: record.summary?.avgTK ?? '-' },
-    { label: '평정 횟수', value: record.summary?.winCount ?? '-' },
-    { label: 'TOP 3', value: record.summary?.top3Count ?? '-' },
-    { label: '평균 등수', value: record.summary?.avgRank ?? '-' },
-    { label: '평균 피해량', value: record.summary?.avgDmgPut?.toLocaleString() ?? '-' },
-    { label: '평균 받은 피해량', value: record.summary?.avgDmgGot?.toLocaleString() ?? '-' },
-  ];
-
-  // 캐릭터별 요약 라벨
-  const labels = [
-    '평균 TK',
-    '평정 횟수',
-    'TOP 3',
-    '평균 등수',
-    '평균 입힌 피해량',
-    '평균 받은 피해량',
-    '평균 획득 점수',
-  ];
-
-  // 캐릭터별 요약 값 추출 함수 (row)
-  function champRowValues(row: any) {
-    return [
-      row.avgTK ?? '-',
-      row.winCount ?? '-',
-      row.top3Count ?? '-',
-      row.avgRank ?? '-',
-      row.avgDmgPut != null ? row.avgDmgPut.toLocaleString() : '-',
-      row.avgDmgGot != null ? row.avgDmgGot.toLocaleString() : '-',
-      row.avgScore ?? '-',
-    ];
-  }
-
-  // 솔로/트리오 모드별 누적 RP 계산 (secure coding: 예외처리 및 주석)
-  let soloRecordsWithRP: any[] = [];
-  let trioRecordsWithRP: any[] = [];
-  try {
-    const soloBaseRP = stats?.brSoloStats?.rankPoint;
-    // teamMode: 1=솔로, 2=트리오
-    const soloRecords = record?.matchRecords?.filter(r => Number(r.teamMode) === 1) || [];
-    console.log('[RP_DEBUG] soloBaseRP:', soloBaseRP);
-    console.log('[RP_DEBUG] teamMode values:', record?.matchRecords?.map(r => r.teamMode));
-    console.log('[RP_DEBUG] soloRecords:', soloRecords);
-    soloRecordsWithRP = calcTotalRP(soloRecords, (soloBaseRP));
-  } catch (e) {
-    console.error('[page.tsx] 솔로 RP 계산 오류:', e);
-    soloRecordsWithRP = [];
-  }
-  try {
-    const trioBaseRP = stats?.brTrioStats?.rankPoint;
-    const trioRecords = record?.matchRecords?.filter(r => Number(r.teamMode) === 2) || [];
-    console.log('[RP_DEBUG] trioBaseRP:', trioBaseRP);
-    console.log('[RP_DEBUG] teamMode values:', record?.matchRecords?.map(r => r.teamMode));
-    console.log('[RP_DEBUG] trioRecords:', trioRecords);
-    trioRecordsWithRP = calcTotalRP(trioRecords, (trioBaseRP));
-  } catch (e) {
-    console.error('[page.tsx] 트리오 RP 계산 오류:', e);
-    trioRecordsWithRP = [];
-  }
-
+  // ===================================================================
+  // 6) JSX 렌더링
+  // ===================================================================
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* 전체/솔로/트리오 요약 블록 */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 min-w-[240px]">
-            <StatsBlock title="솔로 요약" stats={stats?.brSoloStats} locale={locale} />
-          </div>
-          <div className="flex-1 min-w-[240px]">
-            <StatsBlock title="트리오 요약" stats={stats?.brTrioStats} locale={locale} />
-          </div>
-        </div>
-
-        <div className="border border-black rounded-lg p-6 bg-white space-y-6">
-          {/* 최근 경기 요약 */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">최근 경기 요약</h2>
-            <div className="flex justify-between text-center text-sm">
-              {statsArr.map((s) => (
-                <div key={s.label} className="flex-1">
-                  <div>{s.label}</div>
-                  <div className="font-bold">{s.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 네모 박스 스트립 */}
-          <div className="flex flex-wrap gap-2">
-            {record.summary?.recentRanks?.map((id: number, idx: number) => (
-              <div
-                key={idx}
-                className={`w-8 h-8 flex items-center justify-center border rounded ${boxClass(id)} font-medium`}
-              >
-                {id}
+    <div>
+      {/* 버튼 */}
+      <PlayerMatchTabs current={mode} onChange={setMode} />
+      {/* 상세 패널 */}
+      <div className="border border-black rounded-lg p-6 bg-white space-y-6">
+        {/* 최근 경기 요약 */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">
+            최근 경기 요약
+          </h2>
+          <div className="flex justify-between text-center text-sm">
+            {statsArr.map((s, i) => (
+              <div key={i} className="flex-1">
+                <div>{s.label}</div>
+                <div className="font-bold">{s.value}</div>
               </div>
             ))}
           </div>
-          {/* 캐릭터별 2줄 요약 */}
-          <div className="space-y-6 text-sm">
-            <div className="border border-black rounded-lg p-6 bg-white space-y-6">
-              {Array.isArray(record?.champSummary) && record.champSummary.length > 0 ? (
-                record.champSummary.map((row: any, idx: number) => (
-                  <div key={idx} className="flex items-start space-x-4">
-                    {/* 캐릭터 이미지 + 플레이 횟수 */}
-                    <div className="flex flex-col items-center flex-shrink-0 text-xs text-center">
-                      {/* 1) 이미지 래퍼만 overflow-hidden */}
-                      <div className="w-13 h-13 rounded-full border overflow-hidden">
-                        <img
-                          src={`/champion/${row.champName}.png`}
-                          alt={row.champName}
-                          onError={e => {
-                            (e.target as HTMLImageElement).src = '/champion/default.png';
-                          }}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      {/* 2) 이미지 밖, 래퍼 아래에 플레이 횟수 */}
-                      <span className="text-[10px] text-gray-500 mt-1">
-                        {row.games ? `${row.games}회` : '-'}
-                      </span>
-                    </div>
+        </div>
 
-                    {/* grid: 7열 */}
-                    <div className="grid grid-cols-7 flex-1 min-w-max">
-                      {labels.map(label => (
-                        <div
-                          key={label}
-                          className="border-b pb-1 text-xs text-center"
-                        >
-                          {label}
-                        </div>
-                      ))}
-                      {champRowValues(row).map((val, i) => (
-                        <div
-                          key={i}
-                          className="pt-1 font-semibold text-center"
-                        >
-                          {val}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-4 bg-gray-100 rounded mb-6">
-                  캐릭터별 요약 데이터가 없습니다.
-                </div>
-              )}
+        {/* 최근 순위 박스 */}
+        <div className="flex flex-wrap justify-center gap-2">
+          {recentRanks.slice().reverse().map((id, i) => (
+            <div
+              key={i}
+              className={`w-8 h-8 flex items-center justify-center border rounded ${boxClass(
+                id
+              )} font-medium`}
+            >
+              {id}
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* 최근 20경기 상세 */}
-          <div className="pt-6">
-            <h2 className="text-lg font-semibold mb-4">최근 20경기 상세</h2>
-            {/* 솔로 모드 */}
-            <h3 className="font-bold text-lg mb-2">솔로 모드</h3>
-            <MatchRecordsBlockList records={soloRecordsWithRP} locale={locale} />
-            {/* 트리오 모드 */}
-            <h3 className="font-bold text-lg mt-4 mb-2">트리오 모드</h3>
-            <MatchRecordsBlockList records={trioRecordsWithRP} locale={locale} />
-          </div>
+        {/* 캐릭터별 요약 테이블 */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-fixed text-sm">
+            <thead>
+              <tr>
+                <th className="p-2 text-left">챔피언</th>
+                {['평균 TK', '평정 횟수', 'TOP 3', '평균 등수', '평균 입힌 피해량', '평균 받은 피해량', '평균 획득 점수'].map((lbl, i) => (
+                  <th key={i} className="p-2 text-center">{lbl}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+               {champSummaryByMode.length > 0 ? champSummaryByMode.map((row, idx) => (
+                <tr key={idx} className="border-t">
+                  <td className="p-2 flex items-center space-x-2">
+                    <img
+                      src={`/champion/${row.champName}.png`}
+                      alt={row.champName}
+                      className="w-8 h-8 rounded-full border"
+                      onError={e => { (e.target as HTMLImageElement).src = '/champion/default.png'; }}
+                    />
+                    <span>{row.champName} ({row.games}회)</span>
+                  </td>
+                  {[row.avgTK, row.winCount, row.top3Count, row.avgRank, row.avgDmgPut, row.avgDmgGot, row.avgScore].map((val, j) => (
+                    <td key={j} className="p-2 text-center font-semibold">{val}</td>
+                  ))}
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={8} className="p-4 text-center text-gray-500">
+                    캐릭터별 요약 데이터가 없습니다.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
-    </main>
-  );
-}
-
-
-function SoloStats({ stats, record, locale }: { stats: any, record: RecordData | null, locale: Locale }) {
-  // 3번 이미지: 솔로 전적만
-  if (!stats) return <div className="p-4 bg-gray-100 rounded">{t(locale, 'noData')}</div>;
-  return (
-    <div>
-      <StatsBlock title={t(locale, 'solo')} stats={stats} locale={locale} />
-      <h2 className="font-bold text-xl mt-6 mb-2">{t(locale, 'recentMatches')}</h2>
-      <MatchRecordsBlockList records={record?.matchRecords?.filter(r => r.mode === 'solo') ?? []} locale={locale} />
+      <div className="border border-black rounded-lg p-6 bg-white space-y-6 mt-4">
+        {/* 최근 전적 리스트 */}
+        <div className="pt-6">
+          <h2 className="text-lg font-semibold mb-4">
+            {mode === 'all'
+              ? '최근 20경기'
+              : mode === 'solo'
+              ? '솔로 모드'
+              : '트리오 모드'}
+          </h2>
+          <MatchRecordsBlockList
+            records={recordsToShow}
+            locale={locale}
+          />
+        </div>
+      </div>
+      {/* 요약 블록 */}
+      {mode === 'all' ? (
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex-1 min-w-[240px] mt-4">
+            <StatsBlock
+              title="솔로 요약"
+              stats={stats.brSoloStats}
+              locale={locale}
+            />
+          </div>
+          <div className="flex-1 min-w-[240px] mt-4">
+            <StatsBlock
+              title="트리오 요약"
+              stats={stats.brTrioStats}
+              locale={locale}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="mb-6">
+          <StatsBlock
+            title={mode === 'solo' ? '솔로 요약' : '트리오 요약'}
+            stats={
+              mode === 'solo'
+                ? stats.brSoloStats!
+                : stats.brTrioStats!
+            }
+            locale={locale}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-function TrioStats({ stats, record, locale }: { stats: any, record: RecordData | null, locale: Locale }) {
-  // 4번 이미지: 트리오 전적만
-  if (!stats) return <div className="p-4 bg-gray-100 rounded">{t(locale, 'noData')}</div>;
-  return (
-    <div>
-      <StatsBlock title={t(locale, 'trio')} stats={stats} locale={locale} />
-      <h2 className="font-bold text-xl mt-6 mb-2">{t(locale, 'recentMatches')}</h2>
-      <MatchRecordsBlockList records={record?.matchRecords?.filter(r => r.mode === 'trio') ?? []} locale={locale} />
-    </div>
-  );
-}
+
+
 
 function StatsBlock({ title, stats, locale }: { title: string, stats: any, locale: Locale }) {
   if (!stats) return <div className="p-4 bg-gray-100 rounded">{t(locale, 'noData')}</div>;
@@ -384,133 +558,172 @@ function StatsBlock({ title, stats, locale }: { title: string, stats: any, local
         <div>Top</div><div>{stats.topRanks}</div>
         <div>킬</div><div>{stats.kills}</div>
         <div>평균킬</div><div>{stats.avgKill}</div>
-        <div>MMR</div><div>{stats.mmrLabel}</div>
         <div>평균딜</div><div>{stats.avgDamagePut}</div>
         <div>지옥탈출</div><div>{stats.purgatoryEscapes}</div>
       </div>
       <div className="mt-2">
         <div className="font-semibold">플레이 챔피언</div>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {stats.playedChamps?.map((ch: any, i: number) => (
-            <span key={i} className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded text-xs">
-              <ImageWithFallback
-                src={`/champion/${ch.champName}.png`}
-                fallback="/champion/default.png"
-                alt={ch.champName}
-                className="w-5 h-5 inline-block rounded"
-              />
-              {ch.champName} ({ch.matches}경기, Top {ch.topRanks})
-            </span>
-          ))}
-        </div>
-        {/* 챔피언 통계 파이차트 시각화 */}
-        {stats.playedChamps && stats.playedChamps.length > 0 && (
-          <div className="mt-4">
-            <ChampionPieChart playedChamps={stats.playedChamps} />
-          </div>
-        )}
+        {(() => {
+          const sortedChamps = stats.playedChamps
+            ?.slice()
+            .sort((a: any, b: any) => b.matches - a.matches) || [];
+          return (
+            <>
+              {/* 3) 파이차트에도 같은 배열 사용 */}
+              {sortedChamps.length > 0 && (
+                <div className="mt-4">
+                  <ChampionPieChart playedChamps={sortedChamps} />
+                </div>
+              )}
+
+              {/* 2) 순서대로 렌더링 */}
+              <div className="flex flex-wrap justify-center gap-2 mt-7">
+                {sortedChamps.map((ch: any, i: number) => (
+                  <span
+                    key={i}
+                    className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded text-xs"
+                  >
+                    <ImageWithFallback
+                      src={`/champion/${ch.champName}.png`}
+                      fallback="/champion/default.png"
+                      alt={ch.champName}
+                      className="w-5 h-5 inline-block rounded"
+                    />
+                    {ch.champName} ({ch.matches}경기, Top {ch.topRanks})
+                  </span>
+                ))}
+              </div>
+
+
+            </>
+          );
+        })()}
+
       </div>
+
     </div>
   );
 }
 
-function MatchRecordsBlockList({ records, locale }: { records: any[]; locale: Locale }) {
+function MatchRecordsBlockList({
+  records,
+  locale,
+}: {
+  records: any[];
+  locale: Locale;
+}) {
   if (!records?.length) {
     return (
-      <div className="p-4 bg-gray-100 rounded">
+      <div className="p-4 bg-gray-100 rounded text-center">
         {t(locale, 'noRecord')}
       </div>
     );
   }
 
-  // 1) records 전체는 역순으로
-  const reversedRecords = [...records].reverse();
-
   return (
-    <div className="my-4">
-      <div className="space-y-4">
-        {reversedRecords.map((rec, idx) => (
-          <div key={`${rec.rank}-${idx}`} className="border rounded-lg p-4 bg-white shadow-sm">
-            {/* 상단 네모 박스 */}
-            <div className="flex items-center gap-3 mb-2">
-              <div className="text-xl font-bold text-gray-700">
-                #{Number(rec.rank) - 1}
-              </div>
-              <div className="font-semibold text-base text-blue-700">
-                {rec.mode}
-              </div>
-              <div className="text-xs text-gray-500">
-                {rec.time} ({rec.elapsed})
-              </div>
-              <div className="ml-auto text-sm text-gray-400">
-                {rec.playTime}
-              </div>
+    <div className="my-6 space-y-4">
+      {records.map((rec, idx) => (
+        <div
+          key={`${rec.rank}-${idx}`}
+          className="border border-gray-300 rounded-lg bg-white p-4 flex items-center space-x-6 shadow-sm"
+        >
+          {/* 1) 순위 · 모드 · 시간 블록 */}
+          <div className="flex flex-col text-sm w-25 flex-none">
+            {/* 순위: rec.rank */}
+            <span className="font-bold text-lg">#{Number(rec.rank)}</span>
+            {/* 모드: rec.mode */}
+            <span>{rec.mode}</span>
+            {/* 시간: rec.time */}
+            <span className="text-gray-500">{rec.playTime}</span>
+            {/* 경과: rec.elapsed */}
+            <span className="text-gray-500">{rec.elapsed}</span>
+          </div>
+
+          {/* 2) 챔피언 이미지 */}
+          <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden flex-shrink-0">
+            <ImageWithFallback
+              src={`/champion/${rec.champ}.png`}
+              fallback="/champion/default.png"
+              alt={rec.champ}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* 3) 중앙 정보 그리드 */}
+          <div className="flex-1 grid grid-cols-4 gap-x-4 text-sm items-center">
+            {/* TK / K / A */}
+            <div className="flex flex-col items-center">
+              <span className="font-semibold">
+                {rec.teamsKill} / {rec.myKill} / {rec.assists}
+              </span>
+              <span className="text-xs text-gray-500">TK / K / A</span>
             </div>
 
-            {/* 챔피언 이미지 및 이름 */}
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-center min-w-[60px]">
-                <ImageWithFallback
-                  src={`/champion/${rec.champ}.png`}
-                  fallback="/champion/default.png"
-                  alt={rec.champ}
-                  className="w-12 h-12 rounded-full border"
-                />
-                <span className="text-xs mt-1 text-gray-600">
-                  {rec.champ}
+            {/* RP */}
+            <div className="flex flex-col items-center">
+              <span className="flex items-baseline">
+                <span className="font-semibold">
+                  {Number(rec.totalRP).toLocaleString()}
                 </span>
-              </div>
+                <span
+                  className={`ml-1 font-bold ${
+                    String(rec.delta).startsWith('-')
+                      ? 'text-blue-600'
+                      : 'text-red-600'
+                  }`}
+                >
+                  ({rec.delta})
+                </span>
+              </span>
+              {/* RP 등급: rec.rpLabel (백엔드에 없으면 rec.mmr 이용하거나 표시 안함) */}
+              {rec.rpLabel ? (
+                <span className="text-xs text-gray-500">{rec.rpLabel}</span>
+              ) : (
+                <span className="text-xs text-gray-500">
+                  {/* rec.rpLabel이 없으므로 rec.mmr 표시 */}
+                  MMR: {rec.mmr}
+                </span>
+              )}
+            </div>
 
-              {/* 통계 그리드 */}
-              <div className="flex-1 grid grid-cols-3 gap-x-4 gap-y-1 text-sm">
-                <div><span className="font-bold">TK/K/A</span></div>
-                <div><span className="font-bold">RP</span></div>
-                <div><span className="font-bold">입힌 피해량</span></div>
+            {/* 입힌 피해량 */}
+            <div className="flex flex-col items-center">
+              <span className="font-semibold">
+                {(rec.dmgPut).toLocaleString()}
+              </span>
+              <span className="text-xs text-gray-500">입힌 피해량</span>
+            </div>
 
-                <div>
-                  {rec.teamsKill} / {rec.myKill} / {rec.assists}
-                </div>
-                <div>
-                  {/* 3) 역순된 레코드 idx 에, 원본 순서 RP[idx] 그대로 */}
-                  <span className="font-semibold text-black">
-                    {rec.totalRP}
-                  </span>
-                  <span
-                    className={`${
-                      typeof rec.delta === 'string' && rec.delta.startsWith('-')
-                        ? 'text-blue-600 font-bold ml-1'
-                        : 'text-red-600 font-bold ml-1'
-                    }`}
-                  >
-                    ({rec.delta ?? '-'})
-                  </span>
-                </div>
-                <div>{rec.dmgPut}</div>
-
-                <div><span className="font-bold">받은 피해량</span></div>
-                <div><span className="font-bold">MMR</span></div>
-                <div><span className="font-bold">지역</span></div>
-
-                <div>{rec.dmgGot}</div>
-                <div>{rec.mmr}</div>
-                <div>{rec.region}</div>
-              </div>
-
-              {/* 아이템 */}
-              <div className="flex flex-col gap-1 ml-4 min-w-[80px]">
-                {rec.items?.split(',').map((item: string, i: number) => (
-                  <span
-                    key={i}
-                    className="border rounded px-2 py-0.5 text-xs bg-gray-50 text-gray-700 text-center"
-                  >
-                    {item.trim()}
-                  </span>
-                ))}
-              </div>
+            {/* 받은 피해량 */}
+            <div className="flex flex-col items-center">
+              <span className="font-semibold">
+                {(rec.dmgGot).toLocaleString()}
+              </span>
+              <span className="text-xs text-gray-500">받은 피해량</span>
             </div>
           </div>
-        ))}
-      </div>
+
+          {/* 4) 장비 슬롯 (items가 없으면 표시 안 함) */}
+          {rec.items ? (
+            <div className="grid grid-cols-3 gap-1 flex-shrink-0">
+              {rec.items.split(',').map((item: string, i: number) => (
+                <div
+                  key={i}
+                  className="w-10 h-10 border border-gray-300 flex items-center justify-center"
+                >
+                  <img
+                    src={`/item/${item.trim()}.png`}
+                    alt={item.trim()}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-gray-400">장비 정보 없음</div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

@@ -11,7 +11,7 @@ interface PlayerProfileProps {
 export default function PlayerProfile({ nickname, passLevel, mostPlayedChampType, mostPlayedChampName }: PlayerProfileProps) {
   // 프로필 이미지는 mostPlayedChampType 기준으로 /champion/{mostPlayedChampType}.png 사용
   // mostPlayedChampType이 없으면 default
-  const champImg = mostPlayedChampType ? `/champion/${mostPlayedChampType}.png` : '/champion/default.png';
+  const champImg = mostPlayedChampName ? `/champion/${mostPlayedChampName}.png` : '/champion/default.png';
   const champAlt = mostPlayedChampName || mostPlayedChampType || '대표 캐릭터';
   return (
     <div className="flex items-center gap-4 p-4 bg-white rounded shadow mb-4 border">

@@ -134,7 +134,7 @@ export function formatSingleMatchRecord(rec: any) {
     : '';
   const allyChampType1 = CHAMP_NAMES[rec.allyChampType1] || rec.allyChampType1;
   const allyChampType2 = CHAMP_NAMES[rec.allyChampType2] || rec.allyChampType2;
-  const rank = fmtNum((rec.matchRank ?? 0) + 1);
+  const rank = fmtNum((rec.matchRank ?? 0));
   const mode = `${PLAY_MAP[rec.playMode] || '-'} - ${TEAM_MAP[rec.teamMode] || '-'}`;
   const champ = CHAMP_NAMES[rec.champType] || rec.champType;
   const dmgPut = fmtNum(rec.dmgPut || 0);
