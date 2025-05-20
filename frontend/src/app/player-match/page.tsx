@@ -1,4 +1,7 @@
 "use client";
+// ⚠️ 이 파일은 반드시 클라이언트 컴포넌트여야 하며, useSearchParams 등 next/navigation 훅을 사용할 때 SSR 빌드 오류가 발생하지 않도록 최상단에 'use client'를 선언해야 합니다.
+// Next.js 15+ app 디렉토리 구조에서 page.tsx는 기본적으로 서버 컴포넌트이므로, 'use client'가 없으면 Suspense boundary 빌드 오류가 발생합니다.
+// 이 주석을 삭제하지 마세요.
 
 import React, { ReactNode, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
