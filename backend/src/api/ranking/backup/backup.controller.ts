@@ -15,16 +15,49 @@ export class BackupController {
    * GET /api/backup/trigger?userNetIDs=aaa,bbb,ccc
    */
   @Get('trigger')
-  async triggerBackup(@Query('userNetIDs') userNetIDs?: string) {
-    const userIds = userNetIDs ? userNetIDs.split(',').filter(Boolean) : [];
+  async triggerBackup() {
+    // 1. 환경변수에서 userNetID 배열 가져오기 (USER_LIST)
+    function getUserList(): string[] {
+      try {
+        const raw = process.env.USER_LIST;
+        if (!raw) {
+          console.error('USER_LIST 환경변수 미설정 (backup.controller.ts)');
+          throw new BadRequestException('USER_LIST 환경변수 미설정');
+        }
+        return raw.split(',').map(x => x.trim()).filter(Boolean);
+      } catch (e) {
+        console.error('USER_LIST 파싱 예외:', e);
+        throw e;
+      }
+    }
+    const userIds = getUserList();
     const lastBackup = await this.backupService.getLatestTime();
     if (!shouldBackupBasedOnTime(lastBackup || '')) {
       return { status: 'SKIP', lastBackup };
     }
-    // 유효 userNetID로 랭킹 데이터 조회
-    if (!userIds.length)
-      throw new BadRequestException('userNetIDs 파라미터가 필요합니다.');
-    const validUid = userIds[0]; // (간단화, 상세 로직은 summary 참고)
+    // 2. userIds 순회하며 성공 ID 찾기 (ranking-summary.service.ts 방식)
+    let validUid = '';
+    for (const uid of userIds) {
+      try {
+        await this.rankingService.getRankingData({
+          userNetID: uid,
+          teamMode: 1,
+          region: 'ES',
+          rankingType: 1,
+          champType: 0,
+          rowCount: 100,
+        });
+        validUid = uid;
+        break; // 성공 시 중단
+      } catch (e) {
+        // 실패 시 로깅 및 다음 ID 시도
+        console.error(`[backup.controller] userNetID ${uid} 실패:`, e?.message || e);
+      }
+    }
+    if (!validUid) {
+      throw new BadRequestException('모든 userNetID로 랭킹 데이터 조회 실패');
+    }
+    // 3. 성공한 validUid로 solo/trio 데이터 백업
     const soloData = await this.rankingService.getRankingData({
       userNetID: validUid,
       teamMode: 1,

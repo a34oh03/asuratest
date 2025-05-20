@@ -95,12 +95,14 @@ export function compareRankings(prev: any[], curr: any[]): any[] {
     const player = curr[i];
     const curRank = i + 1;
     const nickname = player.nickname;
+    const nickname_raw = player.nickname;
     const score = player.score;
     const champion = player.champion ?? '-';
     if (!(nickname in prevMap)) {
       result.push({
         rank: curRank,
         nickname,
+        nickname_raw,
         champion,
         score,
         rank_change: 'new',
@@ -111,6 +113,7 @@ export function compareRankings(prev: any[], curr: any[]): any[] {
       result.push({
         rank: curRank,
         nickname,
+        nickname_raw,
         champion,
         score,
         rank_change: prevRank - curRank,

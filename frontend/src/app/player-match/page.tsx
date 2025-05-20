@@ -708,15 +708,17 @@ function MatchRecordsBlockList({
                   <span className="font-semibold">
                     {Number(rec.totalRP).toLocaleString()}
                   </span>
+                  {rec.delta !== 0 && (
                   <span
                     className={`ml-1 font-bold ${
-                      String(rec.delta).startsWith('-')
-                        ? 'text-blue-600'
-                        : 'text-red-600'
+                      rec.delta < 0 ? 'text-blue-600' : 'text-red-600'
                     }`}
                   >
-                    ({rec.delta})
+                    {rec.delta < 0
+                      ? `(${rec.delta})`
+                      : `(+${rec.delta})`}
                   </span>
+                )}
                 </span>
                 {rec.rpLabel ? (
                   <span className="text-xs text-gray-500">{rec.rpLabel}</span>

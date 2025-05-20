@@ -1,10 +1,8 @@
 import Image from "next/image";
 
+import { redirect } from 'next/navigation';
+
 export default function Home() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <h1 className="text-red-500 text-4xl font-bold">HelloWorld!</h1>
-      <p className="text-blue-500 text-2xl font-bold"> Nice!! </p>
-    </div>
-  );
+  redirect('/ranking');
+  return null;
 }

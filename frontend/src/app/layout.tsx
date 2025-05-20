@@ -25,13 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`
-          ${geistSans.variable} 
-          ${geistMono.variable} 
-          antialiased 
-          min-h-screen           /* 화면 전체 높이 확보 */
-          bg-black bg-opacity-10 /* 검정 10% 투명도 배경 */
-        `}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
       </body>

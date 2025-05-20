@@ -38,7 +38,12 @@ export default function RankingTable({ players }: Props) {
             return (
               <tr
                 key={`${p.rank}-${p.nickname}`}
-                className="border-t border-gray-300 even:bg-neutral-50 font-geistmono"
+                className="border-t border-gray-300 even:bg-neutral-50 font-geistmono cursor-pointer hover:bg-blue-50"
+                title={`${p.nickname_raw}의 매치 상세로 이동`}
+                aria-label={`${p.nickname_raw}의 매치 상세로 이동`}
+                onClick={() => {
+                  window.location.href = `/player-match?viewNickname=${encodeURIComponent(p.nickname_raw ?? '')}`;
+                }}
               >
                 {/* 등수 */}
                 <td className="px-5 py-3 whitespace-nowrap font-medium">

@@ -16,7 +16,23 @@ export class RankingSummaryController {
     console.log('[GET /ranking/summary] 전체 URL:', req.url);
     // 서버 내부에서만 관리하는 userID 리스트 (예시)
     ////userNetIDs ? userNetIDs.split(',').filter(Boolean) : [];
-    const userList = ['76561199543345410', '76561198112838034']; // 실제 유효한 userID를 배열로 넣어야 함
+    // USER_LIST 환경변수에서 유저 ID 배열을 받아옴 (예: 'id1,id2')
+function getUserList(): string[] {
+  try {
+    const raw = process.env.USER_LIST;
+    if (!raw) {
+      // 로그 및 예외처리
+      console.error('USER_LIST 환경변수 미설정 (ranking-summary.controller.ts)');
+      throw new Error('USER_LIST 환경변수 미설정');
+    }
+    // 콤마로 구분된 값 -> 배열 변환
+    return raw.split(',').map(x => x.trim()).filter(Boolean);
+  } catch (e) {
+    console.error('USER_LIST 파싱 예외:', e);
+    throw e;
+  }
+}
+    const userList = getUserList();
     return this.summaryService.getRankingSummary(userList);
   }
 }
