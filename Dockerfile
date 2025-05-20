@@ -9,13 +9,16 @@ WORKDIR /app
 COPY frontend ./frontend
 COPY backend ./backend
 
+# pnpm 설치 (글로벌)
+RUN corepack enable && corepack prepare pnpm@8.15.5 --activate
+
 # 프론트엔드 의존성 및 빌드
 WORKDIR /app/frontend
-RUN npm install --legacy-peer-deps && npm run build
+RUN pnpm install --frozen-lockfile && pnpm build
 
 # 백엔드 의존성 및 빌드
 WORKDIR /app/backend
-RUN npm install --legacy-peer-deps && npm run build
+RUN pnpm install --frozen-lockfile && pnpm build
 
 # 3. 런타임 이미지(nginx 포함)
 FROM node:18-alpine

@@ -7,12 +7,12 @@ export default function RankingRateLimit() {
       <h1 className="text-4xl font-bold text-gray-800 mb-4">Too Many Requests</h1>
       <img src="/static/rate_limit.png" alt="제한됨 이미지" width={200} className="mb-6 mx-auto" />
       <div className="main-message text-2xl font-bold text-gray-900 leading-relaxed mb-6">
-        누군가가 너무 많은<br />
-        조회를 하고 있어요<br /><br />
-        1분 후 이용해 주세요...
+        무료 서버 터진닷 !!!!<br />
+        <br /><br />
+        1분 후 이용해주세요
       </div>
       <div className="sub-message text-lg text-gray-500 mt-6">
-        ※ 페이지를 자주 새로고침하면 제한될 수 있어요.
+        ※ 페이지를 고의적으로 새로고침 하지 말아주세요
       </div>
     </div>
   );
