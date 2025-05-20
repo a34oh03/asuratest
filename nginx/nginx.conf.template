@@ -1,13 +1,14 @@
-# nginx.conf: Next.js(3000), NestJS(3001) 프록시 설정
+# nginx/nginx.conf.template
+# Next.js(3000), NestJS(3001) 프록시 설정
 # /api/* → 3001, 그 외 → 3000
 # 보안 및 예외처리, fallback 등 유저 룰 반영
+
 user  nginx;
 worker_processes  auto;
 error_log  /var/log/nginx/error.log warn;
 pid        /var/run/nginx.pid;
 
-# 기본 이벤트
- events {
+events {
     worker_connections  1024;
 }
 
@@ -16,9 +17,11 @@ http {
     default_type  application/octet-stream;
     sendfile        on;
     keepalive_timeout  65;
+
     server {
-        listen       80;
-        server_name  localhost;
+        # Render가 할당한 포트로 리스닝
+        listen       ${PORT} default_server;
+        server_name  _;
 
         # /api/* 프록시 - NestJS
         location /api/ {
@@ -28,6 +31,7 @@ http {
             proxy_set_header   Connection 'upgrade';
             proxy_set_header   Host $host;
             proxy_cache_bypass $http_upgrade;
+
             # 예외처리: Nest 다운 시 fallback
             proxy_intercept_errors on;
             error_page 502 503 504 = @fallback_api;
@@ -45,6 +49,7 @@ http {
             proxy_set_header   Connection 'upgrade';
             proxy_set_header   Host $host;
             proxy_cache_bypass $http_upgrade;
+
             # 예외처리: Next 다운 시 fallback
             proxy_intercept_errors on;
             error_page 502 503 504 = @fallback_front;

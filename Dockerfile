@@ -25,18 +25,18 @@ FROM node:18-alpine
 WORKDIR /app
 
 # nginx, supervisor 설치
-RUN apk add --no-cache nginx supervisor
+RUN apk add --no-cache nginx supervisor gettext
 
 # 4. 빌드 결과 복사
 COPY --from=builder /app/frontend ./frontend
 COPY --from=builder /app/backend ./backend
 
 # 5. nginx, supervisor 설정 복사
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY supervisor/supervisord.conf /etc/supervisord.conf
+COPY nginx/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY supervisor/supervisord.conf    /etc/supervisord.conf
 
 # 6. 환경설정: 로그 디렉토리 등
-RUN mkdir -p /var/log/nginx && mkdir -p /var/log/supervisor && mkdir -p /app/frontend && mkdir -p /app/backend
+RUN mkdir -p /var/log/nginx /var/log/supervisor /app/frontend /app/backend
 
 # 7. 포트 오픈
 EXPOSE 80 3000 3001
@@ -45,4 +45,6 @@ EXPOSE 80 3000 3001
 # ENV NODE_ENV=production
 
 # 9. 실행: supervisor로 nginx, next, nest 동시 실행
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD \
+  envsubst '$PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && \
+  exec supervisord -c /etc/supervisord.conf
