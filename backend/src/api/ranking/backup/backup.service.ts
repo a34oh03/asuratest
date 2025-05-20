@@ -1,14 +1,12 @@
 // src/backup/backup.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { getCachedBackupData } from './backup-cache.util';
-import { 
-    uploadBackup, 
-    downloadBackup, 
-    getLatestBackupTime, 
-    setLatestBackupTime 
+import {
+  uploadBackup,
+  downloadBackup,
+  getLatestBackupTime,
+  setLatestBackupTime,
 } from '../firebase/firebase.util';
-
-
 
 @Injectable()
 export class BackupService {

@@ -22,14 +22,31 @@ export class BackupController {
       return { status: 'SKIP', lastBackup };
     }
     // 유효 userNetID로 랭킹 데이터 조회
-    if (!userIds.length) throw new BadRequestException('userNetIDs 파라미터가 필요합니다.');
+    if (!userIds.length)
+      throw new BadRequestException('userNetIDs 파라미터가 필요합니다.');
     const validUid = userIds[0]; // (간단화, 상세 로직은 summary 참고)
-    const soloData = await this.rankingService.getRankingData({ userNetID: validUid, teamMode: 1, region: 'ES', rankingType: 1, champType: 0, rowCount: 100 });
-    const trioData = await this.rankingService.getRankingData({ userNetID: validUid, teamMode: 2, region: 'ES', rankingType: 1, champType: 0, rowCount: 100 });
+    const soloData = await this.rankingService.getRankingData({
+      userNetID: validUid,
+      teamMode: 1,
+      region: 'ES',
+      rankingType: 1,
+      champType: 0,
+      rowCount: 100,
+    });
+    const trioData = await this.rankingService.getRankingData({
+      userNetID: validUid,
+      teamMode: 2,
+      region: 'ES',
+      rankingType: 1,
+      champType: 0,
+      rowCount: 100,
+    });
     const backupObj = { solo: soloData.players, trio: trioData.players };
     const fs = await import('fs/promises');
     const backupPath = 'ranking_backup.json';
-    await fs.writeFile(backupPath, JSON.stringify(backupObj, null, 2), { encoding: 'utf-8' });
+    await fs.writeFile(backupPath, JSON.stringify(backupObj, null, 2), {
+      encoding: 'utf-8',
+    });
     // luxon으로 오늘 날짜 (KST)로 파일명 생성
     const { DateTime } = await import('luxon');
     const nowStr = DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd');

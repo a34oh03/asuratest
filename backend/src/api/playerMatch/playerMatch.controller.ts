@@ -1,5 +1,13 @@
 import {
-  Controller, Get, Query, Body, Post, Logger, InternalServerErrorException, NotFoundException, Res
+  Controller,
+  Get,
+  Query,
+  Body,
+  Post,
+  Logger,
+  InternalServerErrorException,
+  NotFoundException,
+  Res,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { PlayerMatchService } from './playerMatch.service';
@@ -10,6 +18,7 @@ import { ViewMatchRecordDto } from './dto/view-match-record.dto';
 const USER_NET_ID = '76561198112838034'; // TODO: 실서비스 시 환경변수로 분리
 const SESSION_SECRET = '1009528dc5dddb6925a093bd996ccb5e'; // TODO: 실서비스 시 환경변수로 분리
 
+// 할거 : 14분마다 ping 보내는거 확인하기, 12시 되면 데이터 백업 하는지 확인하기, 환경 변수로 값 등록하기, refresh session 추가하기
 @Controller('player-match')
 export class PlayerMatchController {
   private readonly logger = new Logger(PlayerMatchController.name);
@@ -27,7 +36,11 @@ export class PlayerMatchController {
   @Get('match-stats')
   async getMatchStats(@Query() query: ViewMatchStatsDto, @Res() res: Response) {
     try {
-      const data = await this.playerMatchService.viewMatchStats(USER_NET_ID, SESSION_SECRET, query);
+      const data = await this.playerMatchService.viewMatchStats(
+        USER_NET_ID,
+        SESSION_SECRET,
+        query,
+      );
       return res.status(200).json(data);
     } catch (error) {
       this.logger.error('getMatchStats 오류', error);
@@ -47,9 +60,16 @@ export class PlayerMatchController {
    * GET /player-match/match-record?viewNickname=xxx
    */
   @Get('match-record')
-  async getMatchRecord(@Query() query: ViewMatchRecordDto, @Res() res: Response) {
+  async getMatchRecord(
+    @Query() query: ViewMatchRecordDto,
+    @Res() res: Response,
+  ) {
     try {
-      const data = await this.playerMatchService.viewMatchRecord(USER_NET_ID, SESSION_SECRET, query);
+      const data = await this.playerMatchService.viewMatchRecord(
+        USER_NET_ID,
+        SESSION_SECRET,
+        query,
+      );
       return res.status(200).json(data);
     } catch (error) {
       this.logger.error('getMatchRecord 오류', error);

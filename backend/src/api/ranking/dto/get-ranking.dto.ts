@@ -7,7 +7,11 @@ export class GetRankingDto {
   @IsString()
   userNetID: string;
 
-  @ApiProperty({ description: '팀 모드 (1=솔로, 2=트리오)', required: false, default: 1 })
+  @ApiProperty({
+    description: '팀 모드 (1=솔로, 2=트리오)',
+    required: false,
+    default: 1,
+  })
   @IsOptional()
   @IsNumberString()
   teamMode?: string;

@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, HttpException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+} from '@nestjs/common';
 import { Request } from 'express';
 
 // 메모리 기반 IP별 카운터 (실제 운영에서는 Redis 등 외부 저장소 권장)
@@ -39,4 +44,3 @@ export class RateLimitGuard implements CanActivate {
     return true;
   }
 }
-

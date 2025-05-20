@@ -1,5 +1,10 @@
 // Firebase 연동 유틸 (Python 코드 변환)
-import { initializeApp, getApps, cert, applicationDefault } from 'firebase-admin/app';
+import {
+  initializeApp,
+  getApps,
+  cert,
+  applicationDefault,
+} from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -31,14 +36,20 @@ export function initFirebase() {
   }
 }
 
-export async function uploadBackup(filePath: string, firebasePath: string): Promise<void> {
+export async function uploadBackup(
+  filePath: string,
+  firebasePath: string,
+): Promise<void> {
   initFirebase();
   const bucket = getStorage().bucket();
   await bucket.upload(filePath, { destination: firebasePath });
   console.log(`[Firebase] 백업 업로드 완료: ${firebasePath}`);
 }
 
-export async function downloadBackup(firebasePath: string, localPath: string): Promise<boolean> {
+export async function downloadBackup(
+  firebasePath: string,
+  localPath: string,
+): Promise<boolean> {
   initFirebase();
   const bucket = getStorage().bucket();
   const file = bucket.file(firebasePath);
@@ -53,8 +64,6 @@ export async function downloadBackup(firebasePath: string, localPath: string): P
   }
 }
 
-
-
 export async function getLatestBackupTime(): Promise<string | null> {
   initFirebase();
   const bucket = getStorage().bucket();
@@ -65,7 +74,9 @@ export async function getLatestBackupTime(): Promise<string | null> {
     // 항상 'yyyy-MM-dd HH:mm:ss' 포맷으로 반환
     const str = contents.toString().trim();
     // 만약 기존에 ISO 포맷으로 저장된 경우도 호환
-    let dt = DateTime.fromFormat(str, 'yyyy-MM-dd HH:mm:ss', { zone: 'Asia/Seoul' });
+    let dt = DateTime.fromFormat(str, 'yyyy-MM-dd HH:mm:ss', {
+      zone: 'Asia/Seoul',
+    });
     if (!dt.isValid) {
       dt = DateTime.fromISO(str, { zone: 'Asia/Seoul' });
     }
@@ -79,7 +90,9 @@ export async function setLatestBackupTime(): Promise<void> {
   const bucket = getStorage().bucket();
   const file = bucket.file(LAST_BACKUP_PATH);
   // luxon을 사용해 항상 'yyyy-MM-dd HH:mm:ss' 포맷, Asia/Seoul 기준으로 저장
-  const nowStr = DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd HH:mm:ss');
+  const nowStr = DateTime.now()
+    .setZone('Asia/Seoul')
+    .toFormat('yyyy-MM-dd HH:mm:ss');
   await file.save(nowStr);
   console.log('[Firebase] 마지막 백업 시각 저장됨:', nowStr);
 }
