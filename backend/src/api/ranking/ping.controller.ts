@@ -6,7 +6,7 @@ const WAKE_UP_INTERVAL_MIN = 10;
 
 // 서버가 sleep 모드로 진입하지 않도록 주기적으로 자기 자신에게 ping API 호출
 // OnModuleInit 사용, 예외처리 및 주석 추가
-@Controller('api/ping')
+@Controller('ping')
 export class PingController {
   constructor(private readonly pingService: PingService) {}
 
