@@ -18,7 +18,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const port = Number(process.env.PORT) || 3000;
+  const port = Number(process.env.PORT);
   await app.listen(port);
 
   // 서버가 완전히 실행된 후 ping 반복 시작
