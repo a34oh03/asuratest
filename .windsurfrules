@@ -15,3 +15,8 @@ LOG tracing을 위한 로깅
 모든 외부 API 호출(requests, axios 등)은 try/catch 블록으로 감싸고, 실패 시 로그 출력 및 기본값 반환 처리.
 API 호출, 화면 출력, 유틸 함수는 각각 별도 모듈로 분리
 이미지의 경우 fallback 이미지 사용도 고려
+
+ESLint 규칙 절대 준수
+사용 안 하는 import 제거
+any → 명시적 타입으로 바꾸기
+require → import로 바꾸기
