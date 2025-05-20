@@ -1,14 +1,11 @@
-# .dockerignore: 빌드 최적화 및 보안
+# 공통 무시 항목 (빌드 최적화용)
 node_modules
-frontend/node_modules
-backend/node_modules
 dist
 *.log
 .git
 .gitignore
 *.md
-*.json
-*.lock
 *.env
 frontend/.next/cache
 backend/coverage
+backend/firebase_config.json
