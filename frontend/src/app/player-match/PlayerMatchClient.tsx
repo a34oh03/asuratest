@@ -7,7 +7,7 @@ import PlayerMatchTabs, { TabType } from "./PlayerMatchTabs";
 import PlayerProfile from "./PlayerProfile";
 import { calcTotalRP } from './util/calcTotalRP';
 import { t, Locale } from "./i18n";
-import CachedImageWithFallback from "./CachedImageWithFallback";
+import CachedImageWithFallback from "../utils/CachedImageWithFallback";
 import ChampionPieChart from "./ChampionPieChart";
 import {
   fetchPlayerMatchStats,
@@ -101,8 +101,9 @@ export default function PlayerMatchPage() {
         if (msg.includes("404")) {
           setError(
             <div className="flex flex-col items-center space-y-4">
-              <img
+              <CachedImageWithFallback
                 src="/static/error_image.png"
+                fallback="/champion/default.png"
                 alt="존재하지 않는 닉네임"
                 className="w-45 h-45"
               />

@@ -9,7 +9,7 @@ export class PingService {
   public readonly logger = new Logger(PingService.name);
 
   async pingSelfApi() {
-    const url = process.env.PING_URL || 'http://localhost:3000/ping/ping';
+    const url = process.env.PING_URL || 'https://asuratest.onrender.com/api/ping/ping';
     try {
       const res = await axios.get(url);
       this.logger.log(`Ping 성공: ${JSON.stringify(res.data)}`);

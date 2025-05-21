@@ -1,14 +1,11 @@
+// src/api/ranking/ranking-summary.service.ts
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { RankingService } from './ranking.service';
+import { RankingService, RankingParams } from './ranking.service';
 import { getCachedBackupData } from './backup/backup-cache.util';
-import {
-  parsePlayers,
-  calculateChampionStats,
-  getTopPlayersByChampion,
-  compareRankings,
-} from './ranking.util';
+import { compareRankings } from './ranking.util';
 import { DateTime } from 'luxon';
 import { BackupService } from './backup/backup.service';
+
 const CACHE_TTL = 60 * 60 * 2; // 2시간
 
 @Injectable()
@@ -26,43 +23,155 @@ export class RankingSummaryService {
   };
 
   /**
-   * userNetID 중 유효한 ID를 찾아 반환 (캐시/순환)
+   * 메인 랭킹 데이터 요약
+   * 1) 첫 번째 ID로 빠르게 시도
+   * 2) 실패 시 기존 전체 탐색 로직으로 폴백
    */
-  private async getValidUserId(
-    userIds: string[],
-    teamMode: number,
-  ): Promise<string> {
-    const now = Date.now() / 1000;
-    const { uid, timestamp } = this.userCache;
+  async getRankingSummary(userIds: string[]) {
+    if (!userIds.length) {
+      throw new BadRequestException('userNetIDs 파라미터가 비어 있습니다.');
+    }
 
-    // 1) 캐시된 UID 가 TTL 내에 유효하다면
-    if (uid && now - timestamp < CACHE_TTL) {
+    // userQueue 초기화
+    if (this.userQueue.length === 0) {
+      this.userQueue = [...userIds];
+    }
+
+    // 1) 백업 데이터 미리 가져오기 (언제나 공통)
+    const backupData = await getCachedBackupData();
+
+    // 2) 첫 번째 ID(=우선순위 첫 번째)로 시도
+    const primaryId = this.userQueue[0];
+    try {
+      // 솔로/트리오 데이터를 병렬로 가져옴
+      let soloRaw, trioRaw;
       try {
-        await this.rankingService.getRankingData({
-          userNetID: uid,
-          teamMode,
-          region: 'ES',
-          rankingType: 1,
-          champType: 0,
-          rowCount: 100,
-        });
-        return uid;
+        [soloRaw, trioRaw] = await Promise.all([
+          this.rankingService.getRankingData(this.buildParams(primaryId, 1)),
+          this.rankingService.getRankingData(this.buildParams(primaryId, 2)),
+        ]);
+      } catch (e) {
+        // 개별 실패 시 전체 catch로 이동
+        throw e;
+      }
+
+      // 성공 시 캐시에 저장
+      this.userCache = { uid: primaryId, timestamp: Date.now() / 1000 };
+
+      // 바로 요약 생성
+      return this.buildSummary(soloRaw, trioRaw, backupData);
+    } catch (e) {
+      // 첫 번째 ID가 실패하면, 로깅 후 전체 탐색 로직으로 폴백
+      console.warn(
+        `[RankingSummaryService] primaryId(${primaryId}) 실패 → 전체 탐색 시작`,
+        (e as Error).message,
+      );
+      return this.fullSearchAndSummary(userIds, backupData);
+    }
+  }
+
+  /**
+   * 전체 userIds 순차 탐색 후 최초 성공 유저로 요약 생성
+   */
+  private async fullSearchAndSummary(
+    userIds: string[],
+    backupData: ReturnType<typeof getCachedBackupData>,
+  ) {
+    // 1) 유효 ID 찾기 (기존 getValidUserId 로직에서 solo/trio만 추출)
+    const validUid = await this.getValidUserId(userIds);
+
+    // 2) validUid로 솔로/트리오 데이터를 병렬로 재조회
+    let soloRaw, trioRaw;
+    try {
+      [soloRaw, trioRaw] = await Promise.all([
+        this.rankingService.getRankingData(this.buildParams(validUid, 1)),
+        this.rankingService.getRankingData(this.buildParams(validUid, 2)),
+      ]);
+    } catch (e) {
+      // 에러 발생 시 로깅 및 예외 전파
+      console.error('[RankingSummaryService.fullSearchAndSummary] 데이터 병렬 조회 실패:', e);
+      throw e;
+    }
+
+    // 3) 요약 생성
+    return this.buildSummary(soloRaw, trioRaw, backupData);
+  }
+
+  /**
+   * 주어진 raw 데이터를 받아, API 응답용 객체로 포맷
+   */
+  private async buildSummary(soloRaw: any, trioRaw: any, backupData: any) {
+    // 1) 변화량 계산
+    let soloPlayers, trioPlayers;
+    if (backupData) {
+      soloPlayers = compareRankings(backupData.solo, soloRaw.players);
+      trioPlayers = compareRankings(backupData.trio, trioRaw.players);
+    } else {
+      soloPlayers = soloRaw.players.map((p: any) => ({
+        ...p,
+        rank_change: 'new',
+        score_change: null,
+      }));
+      trioPlayers = trioRaw.players.map((p: any) => ({
+        ...p,
+        rank_change: 'new',
+        score_change: null,
+      }));
+    }
+
+    // 2) 캐릭터별 1등 마킹
+    for (const p of soloPlayers) {
+      p.nickname = soloRaw.topPlayersByChampion[p.champion] === p.nickname
+        ? `${p.nickname} 🌟`
+        : p.nickname;
+    }
+    for (const p of trioPlayers) {
+      p.nickname = trioRaw.topPlayersByChampion[p.champion] === p.nickname
+        ? `${p.nickname} 🌟`
+        : p.nickname;
+    }
+
+    // 3) 최종 페이로드
+    return {
+      solo_players: soloPlayers,
+      trio_players: trioPlayers,
+      solo_stats: soloRaw.championStats,
+      trio_stats: trioRaw.championStats,
+      last_backup: await this.backupService.getLatestTime(),
+      now_time: DateTime.now()
+        .setZone('Asia/Seoul')
+        .toFormat('yyyy-MM-dd HH:mm:ss'),
+    };
+  }
+
+  /**
+   * 기존 getValidUserId 로직에서 '솔로' 모드만 사용하도록 분리
+   */
+  private async getValidUserId(userIds: string[]): Promise<string> {
+    const now = Date.now() / 1000;
+
+    // 1) 캐시된 UID 우선 시도
+    if (
+      this.userCache.uid &&
+      now - this.userCache.timestamp < CACHE_TTL
+    ) {
+      try {
+        await this.rankingService.getRankingData(
+          this.buildParams(this.userCache.uid, 1),
+        );
+        return this.userCache.uid;
       } catch {
-        this.rotateUserQueue(uid);
+        this.rotateUserQueue(this.userCache.uid!);
       }
     }
-    // 2) 캐시 무효 시, 큐 순서대로 시도
+
+    // 2) 전체 순차 탐색
     for (const id of userIds) {
       try {
-        await this.rankingService.getRankingData({
-          userNetID: id,
-          teamMode,
-          region: 'ES',
-          rankingType: 1,
-          champType: 0,
-          rowCount: 100,
-        });
-        // 성공한 ID는 캐시에 저장 & 우선순위 조정
+        await this.rankingService.getRankingData(
+          this.buildParams(id, 1),
+        );
+        // 성공 시 캐시 & 큐 업데이트
         this.userCache = { uid: id, timestamp: now };
         this.prioritizeUser(id);
         return id;
@@ -70,10 +179,24 @@ export class RankingSummaryService {
         this.rotateUserQueue(id);
       }
     }
+
     throw new BadRequestException(
       '모든 userNetID에서 데이터를 받아오지 못했습니다.',
     );
   }
+
+  /** 요청 파라미터 구조화 */
+  private buildParams(userNetID: string, teamMode: number) {
+    return {
+      userNetID,
+      teamMode,
+      region: 'ES',
+      rankingType: 1,
+      champType: 0,
+      rowCount: 100,
+    } as RankingParams;
+  }
+
   /** 큐 맨 뒤로 보내기 */
   private rotateUserQueue(userId: string) {
     const idx = this.userQueue.indexOf(userId);
@@ -86,84 +209,5 @@ export class RankingSummaryService {
     const idx = this.userQueue.indexOf(userId);
     if (idx !== -1) this.userQueue.splice(idx, 1);
     this.userQueue.unshift(userId);
-  }
-
-  /**
-   * 메인 랭킹 데이터 요약 (솔로/트리오, 변화량, 캐릭터별 통계)
-   */
-  async getRankingSummary(userIds: string[]) {
-    if (!userIds.length)
-      throw new BadRequestException('userNetIDs 파라미터가 비어 있습니다.');
-    if (!this.userQueue.length) this.userQueue = [...userIds];
-    // 1. 백업 시각 및 데이터
-    const backupData = await getCachedBackupData();
-    // 2. 유효 userNetID 찾기
-    const validUid = await this.getValidUserId(userIds, 1);
-    // 3. 솔로/트리오 데이터
-    const soloRaw = await this.rankingService.getRankingData({
-      userNetID: validUid,
-      teamMode: 1,
-      region: 'ES',
-      rankingType: 1,
-      champType: 0,
-      rowCount: 100,
-    });
-    const trioRaw = await this.rankingService.getRankingData({
-      userNetID: validUid,
-      teamMode: 2,
-      region: 'ES',
-      rankingType: 1,
-      champType: 0,
-      rowCount: 100,
-    });
-    const soloNow = soloRaw.players;
-    const soloStats = soloRaw.championStats;
-    const trioNow = trioRaw.players;
-    const trioStats = trioRaw.championStats;
-    // 4. 변화량 비교
-    let soloPlayers, trioPlayers;
-    if (backupData) {
-      const soloPrev = backupData.solo;
-      const trioPrev = backupData.trio;
-      soloPlayers = compareRankings(soloPrev, soloNow);
-      trioPlayers = compareRankings(trioPrev, trioNow);
-    } else {
-      soloPlayers = soloNow.map((p) => ({
-        ...p,
-        rank_change: 'new',
-        score_change: null,
-      }));
-      trioPlayers = trioNow.map((p) => ({
-        ...p,
-        rank_change: 'new',
-        score_change: null,
-      }));
-    }
-    // 5. 캐릭터별 1등 마킹
-    const soloTopChampions = soloRaw.topPlayersByChampion;
-    for (const p of soloPlayers) {
-      (p as any).nickname_raw = p.nickname;
-      if (soloTopChampions[p.champion] === p.nickname) {
-        p.nickname = `${p.nickname} 🌟`;
-      }
-    }
-    const trioTopChampions = trioRaw.topPlayersByChampion;
-    for (const p of trioPlayers) {
-      (p as any).nickname_raw = p.nickname;
-      if (trioTopChampions[p.champion] === p.nickname) {
-        p.nickname = `${p.nickname} 🌟`;
-      }
-    }
-    // 6. 결과 반환
-    return {
-      solo_players: soloPlayers,
-      trio_players: trioPlayers,
-      solo_stats: soloStats,
-      trio_stats: trioStats,
-      last_backup: await this.backupService.getLatestTime(),
-      now_time: DateTime.now()
-        .setZone('Asia/Seoul')
-        .toFormat('yyyy-MM-dd HH:mm:ss'),
-    };
   }
 }
