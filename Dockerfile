@@ -1,50 +1,68 @@
-# 1. 베이스 이미지 및 패키지 설치
+# 1. 빌드용 이미지: 의존성 설치 & 빌드
 FROM node:18-alpine AS builder
+
+# 공통 작업 디렉터리
 WORKDIR /app
 
-# 2. frontend, backend 복사 및 의존성 설치/빌드
-COPY frontend ./frontend
-COPY backend  ./backend
+# --- FRONTEND BUILD ---
+# 1-1) 의존성 파일만 복사
+COPY frontend/package.json frontend/pnpm-lock.yaml ./frontend/
 
-# pnpm 설치 (글로벌)
-RUN corepack enable && corepack prepare pnpm@8.15.5 --activate
+# 1-2) pnpm 활성화 및 의존성 설치
+RUN corepack enable \
+ && corepack prepare pnpm@8.15.5 --activate
 
-# 프론트엔드 의존성 및 빌드
 WORKDIR /app/frontend
-RUN pnpm install --frozen-lockfile && pnpm build
+RUN pnpm install --frozen-lockfile
 
-# 백엔드 의존성 및 빌드
-WORKDIR /app/backend
-RUN pnpm install --frozen-lockfile && pnpm build
+# 1-3) 소스 전체 복사 & 빌드
+COPY frontend/ ./
+RUN pnpm build
 
-# 3. 런타임 이미지(nginx 포함)
-FROM node:18-alpine
+# --- BACKEND BUILD ---
 WORKDIR /app
 
-# nginx, supervisor, gettext 설치
-RUN apk add --no-cache nginx supervisor gettext
+# 2-1) 의존성 파일만 복사
+COPY backend/package.json backend/pnpm-lock.yaml ./backend/
 
-# ★ pnpm 활성화 (런타임에도 필요)
-RUN corepack enable && corepack prepare pnpm@8.15.5 --activate
+WORKDIR /app/backend
+RUN pnpm install --frozen-lockfile
 
-# 4. 빌드 결과 복사
+# 2-2) 소스 전체 복사 & 빌드
+COPY backend/ ./
+RUN pnpm build
+
+# 3. 런타임 이미지: nginx + supervisor + pnpm 활성화
+FROM node:18-alpine
+
+# 3-1) 작업 디렉터리
+WORKDIR /app
+
+# 3-2) 필요한 패키지 설치
+RUN apk add --no-cache nginx supervisor gettext \
+ # 런타임에도 pnpm 활성화
+ && corepack enable \
+ && corepack prepare pnpm@8.15.5 --activate
+
+# 3-3) 빌드 결과 복사
 COPY --from=builder /app/frontend ./frontend
 COPY --from=builder /app/backend  ./backend
 
-# 5. nginx, supervisor 설정 복사
+# 3-4) 설정 파일 복사
 COPY nginx/nginx.conf.template /etc/nginx/nginx.conf.template
 COPY supervisor/supervisord.conf    /etc/supervisord.conf
 
-# 6. 환경설정: 로그 디렉토리 등
+# 3-5) 로그 디렉터리 및 앱 디렉터리 생성
 RUN mkdir -p /var/log/nginx /var/log/supervisor /app/frontend /app/backend
 
-# 7. 포트 오픈
-EXPOSE 80 3000 3001
+# 3-6) 기본 PORT 환경변수 설정
+ENV PORT=80
 
-# 8. 환경 변수(임의 값 필요 시 주석)
-# ENV NODE_ENV=production
+# 4. 외부 노출 포트 (Render에서는 이 포트만 인식)
+EXPOSE 80
 
-# 9. 실행: 템플릿 치환 후 supervisor로 nginx, next, nest 동시 실행
-CMD \
+# 5. 컨테이너 기동 명령 (템플릿 치환 후 supervisord 실행)
+CMD ["sh", "-c", "\
   envsubst '$PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && \
-  exec supervisord -c /etc/supervisord.conf
+  exec supervisord -c /etc/supervisord.conf \
+"]

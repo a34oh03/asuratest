@@ -9,3 +9,9 @@ dist
 frontend/.next/cache
 backend/coverage
 backend/firebase_config.json
+.pnpm
+backend/node_modules/.pnpm
+frontend/node_modules/.pnpm
+# 모든 위치의 node_modules, .pnpm 폴더를 무시
+**/node_modules
+**/.pnpm

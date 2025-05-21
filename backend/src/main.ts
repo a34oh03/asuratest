@@ -11,7 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // env에서 CORS 허용할 origin 읽어오기
-  const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:3001';
+  const clientOrigin = process.env.CLIENT_ORIGIN;
 
   app.enableCors({
     origin: [clientOrigin],

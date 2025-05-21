@@ -3,7 +3,7 @@ import { BackupService } from './backup.service';
 import { RankingService } from '../ranking.service';
 import { shouldBackupBasedOnTime } from '../ranking.util';
 
-@Controller('backup')
+@Controller('api/backup')
 export class BackupController {
   constructor(
     private readonly backupService: BackupService,

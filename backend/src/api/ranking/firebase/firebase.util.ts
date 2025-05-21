@@ -15,25 +15,38 @@ const LAST_BACKUP_PATH = 'backups/last_backup.txt';
 
 // Firebase 앱 초기화
 export function initFirebase() {
-  if (!getApps().length) {
-    if (process.env.RENDER) {
-      console.log('[INFO] Render 환경 감지됨 → 환경변수로 Firebase 초기화');
-      const firebaseJsonStr = process.env.FIREBASE_CONFIG_JSON;
-      if (!firebaseJsonStr) throw new Error('FIREBASE_CONFIG_JSON env not set');
-      const cred = JSON.parse(firebaseJsonStr);
-      initializeApp({
-        credential: cert(cred),
-        storageBucket: BUCKET_NAME,
-      });
-    } else {
-      console.log('[INFO] 로컬 환경 → 파일로 Firebase 초기화');
-      const credPath = path.resolve(process.cwd(), 'firebase_config.json');
-      initializeApp({
-        credential: cert(credPath),
-        storageBucket: BUCKET_NAME,
-      });
-    }
+  if (getApps().length > 0) {
+    console.log('[INFO] Firebase 앱이 이미 초기화되어 있습니다.');
+    return;
   }
+
+  // 환경변수에 JSON이 설정되어 있으면 이를 사용
+  const firebaseJsonStr = process.env.FIREBASE_CONFIG_JSON;
+  if (firebaseJsonStr) {
+    console.log('[INFO] 환경변수로 Firebase 초기화 시작');
+    let cred;
+    try {
+      cred = JSON.parse(firebaseJsonStr);
+    } catch (e) {
+      console.error('[ERROR] FIREBASE_CONFIG_JSON 파싱 오류:', e);
+      throw e;
+    }
+    initializeApp({
+      credential: cert(cred),
+      storageBucket: BUCKET_NAME,
+    });
+    console.log('[INFO] Firebase 초기화 완료 (env var)');
+    return;
+  }
+
+  // 환경변수가 없으면 로컬 파일 경로를 fallback
+  console.log('[INFO] 환경변수 미검출 → 로컬 파일로 Firebase 초기화');
+  const credPath = path.resolve(process.cwd(), 'firebase_config.json');
+  initializeApp({
+    credential: cert(credPath),
+    storageBucket: BUCKET_NAME,
+  });
+  console.log('[INFO] Firebase 초기화 완료 (file)');
 }
 
 export async function uploadBackup(

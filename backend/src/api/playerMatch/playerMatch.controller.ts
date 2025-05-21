@@ -45,7 +45,7 @@ function getSessionSecret(): string {
 }
 
 // 할거 : 14분마다 ping 보내는거 확인하기, 12시 되면 데이터 백업 하는지 확인하기, 환경 변수로 값 등록하기, refresh session 추가하기
-@Controller('player-match')
+@Controller('api/player-match')
 export class PlayerMatchController {
   private readonly logger = new Logger(PlayerMatchController.name);
 
@@ -53,11 +53,11 @@ export class PlayerMatchController {
 
   /**
    * 솔로/트리오 통계 조회 API
-   * GET /player-match/match-stats?viewNickname=xxx&region=ES
+   * GET /api/player-match/match-stats?viewNickname=xxx&region=ES
    */
   /**
    * 솔로/트리오 통계 조회 API (명시적 예외처리)
-   * GET /player-match/match-stats?viewNickname=xxx&region=ES
+   * GET /api/player-match/match-stats?viewNickname=xxx&region=ES
    */
   @Get('match-stats')
   async getMatchStats(@Query() query: ViewMatchStatsDto, @Res() res: Response) {
@@ -79,11 +79,11 @@ export class PlayerMatchController {
 
   /**
    * 최근 경기 상세 조회 API
-   * GET /player-match/match-record?viewNickname=xxx
+   * GET /api/player-match/match-record?viewNickname=xxx
    */
   /**
    * 최근 경기 상세 조회 API (명시적 예외처리)
-   * GET /player-match/match-record?viewNickname=xxx
+   * GET /api/player-match/match-record?viewNickname=xxx
    */
   @Get('match-record')
   async getMatchRecord(

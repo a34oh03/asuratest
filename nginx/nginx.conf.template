@@ -1,7 +1,8 @@
-# nginx/nginx.conf.template
+# nginx.conf.template
 # Next.js(3000), NestJS(3001) 프록시 설정
-# /api/* → 3001, 그 외 → 3000
-# 보안 및 예외처리, fallback 등 유저 룰 반영
+# API는 /api/* → NestJS
+# 그 외 → Next.js
+# fallback 처리 포함
 
 user  nginx;
 worker_processes  auto;
@@ -13,17 +14,36 @@ events {
 }
 
 http {
+    log_format  main  '$remote_addr - $remote_user [$time_local]  '
+                      '"$request" $status $body_bytes_sent  '
+                      '"$http_referer" "$http_user_agent"';
+    access_log  /var/log/nginx/access.log  main;
+    error_log   /var/log/nginx/error.log   warn;
+
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
     sendfile        on;
     keepalive_timeout  65;
 
     server {
-        # Render가 할당한 포트로 리스닝
         listen       ${PORT} default_server;
         server_name  _;
 
-        # /api/* 프록시 - NestJS
+        # 정적 자산: Next.js
+        location ~ ^/_next/ {
+            proxy_pass         http://localhost:3000;
+            proxy_set_header   Host $host;
+        }
+        location ~ ^/static/ {
+            proxy_pass         http://localhost:3000;
+            proxy_set_header   Host $host;
+        }
+        location = /favicon.ico {
+            proxy_pass         http://localhost:3000;
+            proxy_set_header   Host $host;
+        }
+
+        # 1) API 요청: /api/* → NestJS
         location /api/ {
             proxy_pass         http://localhost:3001;
             proxy_http_version 1.1;
@@ -31,17 +51,17 @@ http {
             proxy_set_header   Connection 'upgrade';
             proxy_set_header   Host $host;
             proxy_cache_bypass $http_upgrade;
-
-            # 예외처리: Nest 다운 시 fallback
             proxy_intercept_errors on;
             error_page 502 503 504 = @fallback_api;
         }
+
+        # API fallback
         location @fallback_api {
             return 503 '{"error":"API temporarily unavailable"}';
             add_header Content-Type application/json;
         }
 
-        # 그 외 프론트엔드(Next.js)
+        # 2) 그 외 모든 요청 → Next.js
         location / {
             proxy_pass         http://localhost:3000;
             proxy_http_version 1.1;
@@ -49,11 +69,11 @@ http {
             proxy_set_header   Connection 'upgrade';
             proxy_set_header   Host $host;
             proxy_cache_bypass $http_upgrade;
-
-            # 예외처리: Next 다운 시 fallback
             proxy_intercept_errors on;
             error_page 502 503 504 = @fallback_front;
         }
+
+        # Next.js fallback
         location @fallback_front {
             return 503 '<html><body><h1>서비스 점검 중입니다.</h1></body></html>';
             add_header Content-Type text/html;
