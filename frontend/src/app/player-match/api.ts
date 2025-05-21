@@ -1,7 +1,7 @@
 // src/app/player-match/api/playerMatchApi.ts
 export async function fetchPlayerMatchStats(viewNickname: string) {
   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:10000/api";
-  const url = `${base}/player-match/match-stats?viewNickname=${encodeURIComponent(
+  const url = `/api/player-match/match-stats?viewNickname=${encodeURIComponent(
     viewNickname
   )}`;
   console.log("fetchPlayerMatchStats 요청 URL:", url);
@@ -22,7 +22,7 @@ export async function fetchPlayerMatchStats(viewNickname: string) {
 
 export async function fetchPlayerMatchRecord(viewNickname: string) {
   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:10000/api";
-  const url = `${base}/player-match/match-record?viewNickname=${encodeURIComponent(
+  const url = `/api/player-match/match-record?viewNickname=${encodeURIComponent(
     viewNickname
   )}`;
   console.log("fetchPlayerMatchRecord 요청 URL:", url);
