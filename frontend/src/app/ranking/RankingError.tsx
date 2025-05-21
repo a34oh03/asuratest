@@ -7,11 +7,11 @@ export default function RankingError() {
         <div className="mt-32 mb-4">
           <p className="text-base">이 창에 대한 내용은 아래 디시글 참고</p>
           <a
-            href="https://m.dcinside.com/board/asurajang/11788"
+            href="https://gall.dcinside.com/asurajang/20184"
             target="_blank"
             className="text-blue-600 underline text-base"
           >
-            https://m.dcinside.com/board/asurajang/11788
+            https://gall.dcinside.com/asurajang/20184
           </a>
         </div>
       </div>

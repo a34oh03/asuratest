@@ -121,12 +121,12 @@ export default function PlayerMatchPage() {
               />
               <span>주인장 세션이 만료되어서 못봐요.</span>
               <a
-                href="https://gall.dcinside.com/asurajang/11788"
+                href="https://gall.dcinside.com/asurajang/20184"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 underline"
               >
-                https://gall.dcinside.com/asurajang/11788
+                https://gall.dcinside.com/asurajang/20184
               </a>
             </div>
           );
