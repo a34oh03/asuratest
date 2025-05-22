@@ -68,7 +68,7 @@ export class PlayerMatchService {
         },
       );
 
-      this.logger.log('viewMatchStats 외부 API 응답', resp.data);
+  //    this.logger.log('viewMatchStats 외부 API 응답', resp.data);
       const data = resp.data?.data;
 
       // 닉네임이 없거나 잘못된 경우 → 404 처리
@@ -151,7 +151,8 @@ export class PlayerMatchService {
         },
       );
 
-      this.logger.log('viewMatchRecord 외부 API 응답', resp.data);
+    //  this.logger.log('viewMatchRecord 외부 API 응답', resp.data);
+      this.logger.log('viewMatchRecord 외부 API 응답', resp.data?.data.nickname ? resp.data?.data.nickname : ".");
       const data = resp.data?.data || {};
 
       // 닉네임이 없거나 잘못된 경우 → 404 처리
