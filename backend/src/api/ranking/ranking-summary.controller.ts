@@ -13,7 +13,7 @@ export class RankingSummaryController {
    */
   @Get('summary')
   async getSummary(@Req() req: Request) {
-    console.log('[GET /ranking/summary] 전체 URL:', req.url);
+   // console.log('[GET /ranking/summary] 전체 URL:', req.url);
     // 서버 내부에서만 관리하는 userID 리스트 (예시)
     ////userNetIDs ? userNetIDs.split(',').filter(Boolean) : [];
     // USER_LIST 환경변수에서 유저 ID 배열을 받아옴 (예: 'id1,id2')

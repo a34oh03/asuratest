@@ -10,6 +10,8 @@ import {
   getTopPlayersByChampion,
   compareRankings,
   shouldBackupBasedOnTime,
+  PlayerSummary,        // ← PlayerSummary 타입도 가져옵니다
+  ChampionStats,        // ← ChampionStats 타입
 } from './ranking.util';
 
 export interface RankingParams {
@@ -30,8 +32,8 @@ export class RankingService {
 
   async getRankingData(params: RankingParams): Promise<{
     // 최종적으로 반환할 가공된 데이터 타입 정의
-    players: Array<{ nickname: string; score: number; champion: number }>;
-    championStats: { labels: string[]; counts: number[] };
+    players: PlayerSummary[];
+    championStats: ChampionStats;
     topPlayersByChampion: Record<number, string>;
   }> {
     const API_URL = 'http://live.surajang.com:6557/ranking/getTopRankN';
@@ -47,7 +49,7 @@ export class RankingService {
     const fullUrl = `${API_URL}?${queryString}`;
 
     // 3) 로깅
-    console.log(`→ HTTP GET: ${fullUrl}`);
+    //console.log(`→ HTTP GET: ${fullUrl}`);
 
     // 5) HTTP GET 요청: Observable → Promise
     const response$: Promise<AxiosResponse> = firstValueFrom(

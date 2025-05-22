@@ -19,52 +19,96 @@ export const championMap: Record<number, string> = {
   17: '쇼요',
 };
 
-export function parsePlayers(playersRaw: any[]): any[] {
-  const players = [];
-  for (let i = 0; i < playersRaw.length; i += 4) {
-    try {
-      const nickname = playersRaw[i];
-      const score = Number(playersRaw[i + 1]);
-      const champId = Number(playersRaw[i + 2]);
-      const champion = championMap[champId] ?? `알 수 없음(${champId})`;
-      players.push({
-        rank: Math.floor(i / 4) + 1,
-        nickname,
-        score,
-        champion,
-      });
-    } catch {
-      continue;
-    }
-  }
+// --- 타입 선언부 ---
+export interface PlayerRaw {
+  nickname?: string;
+  score?: number | string;
+  champType?: number | string;
+  // iconDocKey, outfitFashion, titleDocKey 등
+}
+
+export interface PlayerSummary {
+  rank: number;
+  nickname: string;
+  score: number;
+  champion: string;
+}
+
+export interface ChampionStats {
+  labels: string[];
+  counts: number[];
+}
+// -----------------------
+
+
+/**
+ * playersRaw: API 로부터 받은 “원시” 플레이어 배열
+ * 반환: PlayerSummary[] (랭킹 순서대로)
+ */
+export function parsePlayers(playersRaw: PlayerRaw[]): PlayerSummary[] {
+  const players: PlayerSummary[] = [];  // ← 명시적 타입 지정
+
+  playersRaw.forEach((p, idx) => {
+    const nickname = typeof p.nickname === 'string' ? p.nickname : '알 수 없음';
+
+    // score: 숫자 또는 숫자 문자열 → Number
+    const rawScore = p.score ?? 0;
+    const nScore = typeof rawScore === 'number' ? rawScore : Number(rawScore);
+    const score  = Number.isFinite(nScore) ? nScore : 0;
+
+    // champType: 숫자 또는 숫자 문자열 → Number
+    const rawChamp = p.champType ?? 0;
+    const nChamp   = typeof rawChamp === 'number' ? rawChamp : Number(rawChamp);
+    const champId  = Number.isFinite(nChamp) ? nChamp : 0;
+
+    const champion = championMap[champId] ?? `알 수 없음(${champId})`;
+
+    players.push({
+      rank:     idx + 1,
+      nickname,
+      score,
+      champion,
+    });
+  });
+
   return players;
 }
 
-export function calculateChampionStats(playersRaw: any[]): {
-  labels: string[];
-  counts: number[];
-} {
+
+/**
+ * playersRaw: API 로부터 받은 “원시” 플레이어 배열
+ * 반환: 챔피언별 사용 통계를 담은 객체
+ */
+export function calculateChampionStats(playersRaw: PlayerRaw[]): ChampionStats {
   const counter: Record<number, number> = {};
-  for (let i = 0; i < playersRaw.length; i += 4) {
-    try {
-      const champId = Number(playersRaw[i + 2]);
-      counter[champId] = (counter[champId] || 0) + 1;
-    } catch {
-      continue;
-    }
-  }
-  // 모든 캐릭터 포함시키기
+
+  playersRaw.forEach(p => {
+    const rawChamp = p.champType ?? 0;
+    const nChamp   = typeof rawChamp === 'number' ? rawChamp : Number(rawChamp);
+    const cid      = Number.isFinite(nChamp) ? nChamp : 0;
+
+    counter[cid] = (counter[cid] || 0) + 1;
+  });
+
+  // 모든 챔피언을 포함하도록 초기화
   const fullStats: Record<number, number> = {};
-  for (const cid of Object.keys(championMap).map(Number)) {
+  (Object.keys(championMap).map(k => Number(k))).forEach(cid => {
     fullStats[cid] = counter[cid] || 0;
-  }
-  const sortedChamps = Object.entries(fullStats).sort((a, b) => b[1] - a[1]);
-  const labels = sortedChamps.map(
-    ([cid]) => championMap[Number(cid)] ?? String(cid),
+  });
+
+  // 내림차순 정렬
+  const sorted = (Object.entries(fullStats) as [string, number][])
+    .sort(([, a], [, b]) => b - a);
+
+  const labels = sorted.map(([cid]) => 
+    championMap[Number(cid)] ?? `알 수 없음(${cid})`
   );
-  const counts = sortedChamps.map(([, count]) => count);
+  const counts = sorted.map(([, cnt]) => cnt);
+
   return { labels, counts };
 }
+
+
 
 export function getTopPlayersByChampion(
   players: any[],
@@ -83,6 +127,7 @@ export function getTopPlayersByChampion(
   }
   return result;
 }
+
 
 export function compareRankings(prev: any[], curr: any[]): any[] {
   // 이전 플레이어 정보 맵: nickname -> (rank, score)
