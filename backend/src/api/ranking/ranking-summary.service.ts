@@ -54,7 +54,7 @@ export class RankingSummaryService {
         // 개별 실패 시 전체 catch로 이동
         throw e;
       }
-
+      console.log(`→ 요청 성공: ${primaryId}`);
       // 성공 시 캐시에 저장
       this.userCache = { uid: primaryId, timestamp: Date.now() / 1000 };
 

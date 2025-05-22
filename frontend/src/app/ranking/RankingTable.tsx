@@ -74,7 +74,7 @@ export default function RankingTable({ players }: Props) {
 
                 {/* 플레이 포인트 + 변화 */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="inline-block min-w-[42px]">{p.score.toLocaleString()}</span>
+                  <span className="inline-block min-w-[42px]">{(p.score ?? 0).toLocaleString()}</span>
                   {scoreChange !== null && scoreChange !== undefined && scoreChange !== 0 && (
                     <span
                       className={`${
