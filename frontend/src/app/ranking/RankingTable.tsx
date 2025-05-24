@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { Player } from './types';
+import { NoTranslate } from '../utils/NoTranslate';
 
 interface Props {
   players: Player[];
@@ -52,7 +53,7 @@ export default function RankingTable({ players }: Props) {
 
                 {/* 아이디 + 등수 변동 */}
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span>{p.nickname}</span>
+                <NoTranslate>{p.nickname}</NoTranslate>
                   {' '}
                   {isNew ? (
                     <span className=" text-yellow-300 ">(new!)</span>
