@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-
+import { NoTranslate } from '../utils/NoTranslate';
 interface PlayerProfileProps {
   nickname: string;
   passLevel?: number;
@@ -22,7 +22,7 @@ export default function PlayerProfile({ nickname, passLevel, mostPlayedChampType
         onError={e => (e.currentTarget.src = "/champion/default.png")}
       />
       <div>
-        <div className="font-bold text-lg">{nickname}</div>
+        <div className="font-bold text-lg"><NoTranslate>{nickname}</NoTranslate></div>
         {mostPlayedChampName && (
           <div className="text-sm text-blue-500">대표 캐릭터: {mostPlayedChampName}</div>
         )}

@@ -658,24 +658,24 @@ function MatchRecordsBlockList({
   }
 
   return (
-    <div className="my-6 space-y-4">
+    <div className="my-6 space-y-4 ">
       {records.map((rec, idx) => {
         const rankNum = Number(rec.rank);
-  
-        // 왼쪽 컬러 바 설정
-        let leftColor = "border-l-8 border-l-gray-400";
+
+        // 왼쪽 컬러 바 설정 
+        let leftColor = "border-l-8 border-l-gray-400";       // 기본
         if (rankNum === 1)      leftColor = "border-l-8 border-l-yellow-300";
         else if (rankNum === 2) leftColor = "border-l-8 border-l-blue-400";
         else if (rankNum === 3) leftColor = "border-l-8 border-l-red-400";
-  
+
         return (
           <div
             key={`${rec.rank}-${idx}`}
             className={`
               relative flex items-center space-x-6 bg-white rounded-lg p-4
               shadow-sm
-              border-1 border-gray-300
-              ${leftColor}
+              border-1 border-gray-300      /* ← 전체 테두리 진하게 */
+              ${leftColor}              /* ← 왼쪽 컬러 바 */
             `}
           >
             {/* 1) 순위 · 모드 · 시간 블록 */}
@@ -685,54 +685,17 @@ function MatchRecordsBlockList({
               <span className="text-gray-500">{rec.playTime}</span>
               <span className="text-gray-500">{rec.elapsed}</span>
             </div>
-  
-            {/* 2) 챔피언 이미지 영역 */}
-            {rec.mode === '배틀로얄 - 솔로' ? (
-              // 솔로 모드: 단일 이미지
-              <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden flex-shrink-0">
-                <CachedImageWithFallback
-                  src={`/champion/${rec.champ}.png`}
-                  fallback="/champion/default.png"
-                  alt={rec.champ}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : rec.mode === '배틀로얄 - 트리오' ? (
-              // 트리오 모드: 메인 + 아군 2명
-              <div className="flex items-center flex-shrink-0">
-                {/* 메인 챔피언 */}
-                <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden">
-                  <CachedImageWithFallback
-                    src={`/champion/${rec.champ}.png`}
-                    fallback="/champion/default.png"
-                    alt={rec.champ}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {/* 아군 2명: 작은 원형 이미지 위아래 */}
-                <div className="flex flex-col ml-2 space-y-1">
-                  <div className="w-8 h-8 rounded-full border border-gray-400 overflow-hidden">
-                    <CachedImageWithFallback
-                      src={`/champion/${rec.allyChampType1}.png`}
-                      fallback="/champion/default.png"
-                      alt={rec.allyChampType1}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="w-8 h-8 rounded-full border border-gray-400 overflow-hidden">
-                    <CachedImageWithFallback
-                      src={`/champion/${rec.allyChampType2}.png`}
-                      fallback="/champion/default.png"
-                      alt={rec.allyChampType2}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              null
-            )}
-  
+
+            {/* 2) 챔피언 이미지 */}
+            <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden flex-shrink-0">
+              <CachedImageWithFallback
+                src={`/champion/${rec.champ}.png`}
+                fallback="/champion/default.png"
+                alt={rec.champ}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
             {/* 3) 중앙 정보 그리드 */}
             <div className="flex-1 grid grid-cols-4 gap-x-4 text-sm items-center">
               <div className="flex flex-col items-center">
@@ -747,14 +710,16 @@ function MatchRecordsBlockList({
                     {Number(rec.totalRP).toLocaleString()}
                   </span>
                   {rec.delta !== 0 && (
-                    <span
-                      className={`ml-1 font-bold ${
-                        rec.delta < 0 ? 'text-blue-600' : 'text-red-600'
-                      }`}
-                    >
-                      {rec.delta < 0 ? `(${rec.delta})` : `(+${rec.delta})`}
-                    </span>
-                  )}
+                  <span
+                    className={`ml-1 font-bold ${
+                      rec.delta < 0 ? 'text-blue-600' : 'text-red-600'
+                    }`}
+                  >
+                    {rec.delta < 0
+                      ? `(${rec.delta})`
+                      : `(+${rec.delta})`}
+                  </span>
+                )}
                 </span>
                 {rec.rpLabel ? (
                   <span className="text-xs text-gray-500">{rec.rpLabel}</span>
@@ -764,18 +729,19 @@ function MatchRecordsBlockList({
               </div>
               <div className="flex flex-col items-center">
                 <span className="font-semibold">
-                  {rec.dmgPut.toLocaleString()}
+                  {(rec.dmgPut).toLocaleString()}
                 </span>
                 <span className="text-xs text-gray-500">입힌 피해량</span>
               </div>
-              <div className="flex flex-col items-center">
-                <span className="font-semibold">
-                  {rec.dmgGot.toLocaleString()}
-                </span>
-                <span className="text-xs text-gray-500">받은 피해량</span>
-              </div>
+               {/* 받은 피해량 */}
+            <div className="flex flex-col items-center">
+              <span className="font-semibold">
+                {(rec.dmgGot).toLocaleString()}
+              </span>
+              <span className="text-xs text-gray-500">받은 피해량</span>
             </div>
-  
+            </div>
+
             {/* 4) 장비 슬롯 */}
             {rec.items ? (
               <div className="grid grid-cols-3 gap-1">
@@ -783,29 +749,30 @@ function MatchRecordsBlockList({
                   const names = rec.items.split(',').map((s: string) => s.trim());
                   const levels = rec.astra.split(',').map((s: string) => s.trim());
                   const len = Math.min(names.length, levels.length);
-                  return names.slice(0, len).map((name: string, i: number) => (
-                    <div
-                      key={i}
-                      className="relative w-12 h-12 border border-gray-300 overflow-hidden rounded"
-                    >
-                      <CachedImageWithFallback
-                        src={`/item/${name}.png`}
-                        fallback="/item/default.png"
-                        alt={name}
-                        className="w-full h-full object-contain"
-                      />
-                      <span
-                        className="
+                  return names.slice(0, len).map((name: string, i: number) => {
+                    const level = levels[i];
+                    return (
+                      <div
+                        key={i}
+                        className="relative w-12 h-12 border border-gray-300 overflow-hidden rounded"
+                      >
+                        <CachedImageWithFallback
+                          src={`/item/${name}.png`}
+                          fallback="/item/default.png"
+                          alt={name}
+                          className="w-full h-full object-contain"
+                        />
+                        <span className="
                           absolute bottom-0 right-0
                           bg-black bg-opacity-50
                           text-yellow-300 text-[10px] font-bold
                           px-0.5
-                        "
-                      >
-                        {levels[i]}↑
-                      </span>
-                    </div>
-                  ));
+                        ">
+                          {level}↑
+                        </span>
+                      </div>
+                    );
+                  });
                 })()}
               </div>
             ) : (
