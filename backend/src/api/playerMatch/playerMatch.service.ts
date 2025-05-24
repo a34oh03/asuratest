@@ -126,11 +126,11 @@ export class PlayerMatchService {
     dto: ViewMatchRecordDto,
   ): Promise<any> {
     try {
-      console.log(
-        `viewMatchRecord 호출: ${userNetID}, ${sessionSecret}, ${JSON.stringify(
-          dto,
-        )}`,
-      );
+    //  console.log(
+        //`viewMatchRecord 호출: ${userNetID}, ${sessionSecret}, ${JSON.stringify(
+//          dto,
+        //)}`,
+      //);
 
       // 외부 API 호출
       const resp = await this.httpService.axiosRef.get(

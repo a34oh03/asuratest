@@ -69,7 +69,7 @@ export class RefreshSessionService {
       }
       const now = new Date().toISOString();
       if (resp.data?.data) {
-        this.logger.log(`[${now}] refresh OK → resultCode=${resp.data.data.resultCode}, seqNo=${resp.data.data.seqNo}`);
+        this.logger.log(`refresh OK`);// → resultCode=${resp.data.data.resultCode}, seqNo=${resp.data.data.seqNo}`);
       } else {
         this.logger.warn(`[${now}] refresh 응답: ${JSON.stringify(resp.data)}`);
       }

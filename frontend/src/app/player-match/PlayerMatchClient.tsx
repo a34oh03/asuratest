@@ -686,15 +686,53 @@ function MatchRecordsBlockList({
               <span className="text-gray-500">{rec.elapsed}</span>
             </div>
 
-            {/* 2) 챔피언 이미지 */}
-            <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden flex-shrink-0">
-              <CachedImageWithFallback
-                src={`/champion/${rec.champ}.png`}
-                fallback="/champion/default.png"
-                alt={rec.champ}
-                className="w-full h-full object-cover"
-              />
-            </div>
+
+            {/* 2) 챔피언 이미지 영역 */}
+            {rec.mode === '배틀로얄 - 솔로' ? (
+              // 솔로 모드: 단일 이미지
+              <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden flex-shrink-0">
+                <CachedImageWithFallback
+                  src={`/champion/${rec.champ}.png`}
+                  fallback="/champion/default.png"
+                  alt={rec.champ}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : rec.mode === '배틀로얄 - 트리오' ? (
+              // 트리오 모드: 메인 + 아군 2명
+              <div className="flex items-center flex-shrink-0">
+                {/* 메인 챔피언 */}
+                <div className="w-20 h-20 rounded-full border border-gray-400 overflow-hidden">
+                  <CachedImageWithFallback
+                    src={`/champion/${rec.champ}.png`}
+                    fallback="/champion/default.png"
+                    alt={rec.champ}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* 아군 2명: 작은 원형 이미지 위아래 */}
+                <div className="flex flex-col ml-2 space-y-1">
+                  <div className="w-8 h-8 rounded-full border border-gray-400 overflow-hidden">
+                    <CachedImageWithFallback
+                      src={`/champion/${rec.allyChampType1}.png`}
+                      fallback="/champion/default.png"
+                      alt={rec.allyChampType1}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="w-8 h-8 rounded-full border border-gray-400 overflow-hidden">
+                    <CachedImageWithFallback
+                      src={`/champion/${rec.allyChampType2}.png`}
+                      fallback="/champion/default.png"
+                      alt={rec.allyChampType2}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              null
+            )}
 
             {/* 3) 중앙 정보 그리드 */}
             <div className="flex-1 grid grid-cols-4 gap-x-4 text-sm items-center">
