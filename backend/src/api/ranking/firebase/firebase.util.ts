@@ -16,7 +16,7 @@ const LAST_BACKUP_PATH = 'backups/last_backup.txt';
 // Firebase 앱 초기화
 export function initFirebase() {
   if (getApps().length > 0) {
-    console.log('[INFO] Firebase 앱이 이미 초기화되어 있습니다.');
+   // console.log('[INFO] Firebase 앱이 이미 초기화되어 있습니다.');
     return;
   }
 

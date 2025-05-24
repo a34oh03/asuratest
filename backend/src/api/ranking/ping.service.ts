@@ -12,7 +12,7 @@ export class PingService {
     const url = process.env.PING_URL || 'https://asurajang.onrender.com/api/ping/ping';
     try {
       const res = await axios.get(url);
-      this.logger.log(`Ping 성공: ${JSON.stringify(res.data)}`);
+      this.logger.log(`Ping 성공: ${JSON.stringify(res.data?.info)}`);
     } catch (error) {
       this.logger.error(`Ping 실패: ${error instanceof Error ? error.message : error}`);
     }
