@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://asurajang.onrender.com/sitemap.xml
