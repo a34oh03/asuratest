@@ -143,14 +143,14 @@ export default function RankingClient() {
       {/* 챔피언 통계 차트 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
         <ChampionBarChart
-          labels={data.solo_stats.labels}
-          counts={data.solo_stats.counts}
-          title="자주 사용된 주 캐릭터 (솔로)"
-        />
-        <ChampionBarChart
           labels={data.trio_stats.labels}
           counts={data.trio_stats.counts}
           title="자주 사용된 주 캐릭터 (트리오)"
+        />
+        <ChampionBarChart
+          labels={data.solo_stats.labels}
+          counts={data.solo_stats.counts}
+          title="자주 사용된 주 캐릭터 (솔로)"
         />
       </div>
 
