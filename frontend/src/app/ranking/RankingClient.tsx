@@ -13,7 +13,19 @@ import CachedImageWithFallback from "../utils/CachedImageWithFallback";
 export default function RankingClient() {
   const fetched = useRef(false);
 
-  const [mode, setMode] = useState<'solo' | 'trio'>('solo');
+  const getInitialMode = (): 'solo' | 'trio' => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('selectedMode');
+      if (saved === 'solo' || saved === 'trio') return saved;
+    }
+    return 'trio';
+  };
+
+  const [mode, setMode] = useState<'solo' | 'trio'>(getInitialMode);
+  useEffect(() => {
+    localStorage.setItem('selectedMode', mode);
+  }, [mode]);
+
   const [data, setData] = useState<RankingSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,8 +98,16 @@ export default function RankingClient() {
         <PlayerSearchBar />
       </div>
 
-      {/* 솔로/트리오 버튼 (UI 전환만) */}
+      {/* 트리오/솔로 버튼 (UI 전환만) */}
       <div className="flex gap-2 justify-center mb-4">
+      <button
+          className={`px-4 py-2 rounded shadow ${
+            mode === 'trio' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+          }`}
+          onClick={() => setMode('trio')}
+        >
+          트리오
+        </button>
         <button
           className={`px-4 py-2 rounded shadow ${
             mode === 'solo' ? 'bg-blue-600 text-white' : 'bg-gray-200'
@@ -96,21 +116,18 @@ export default function RankingClient() {
         >
           솔로
         </button>
-        <button
-          className={`px-4 py-2 rounded shadow ${
-            mode === 'trio' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-          }`}
-          onClick={() => setMode('trio')}
-        >
-          트리오
-        </button>
+
       </div>
 
       {/* 제목 + 업데이트 시간 */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-left">
+      <h1 className="text-2xl font-bold text-left">
+        {mode === 'trio' ? 'Top 100 랭커 (트리오)' : '솔로를 빛낸 100명의 위인들'}
+      </h1>
+
+        {/*    <h1 className="text-2xl font-bold text-left">
           Top 100 랭커 ({mode === 'solo' ? '솔로' : '트리오'})
-        </h1>
+        </h1> */}
         <div className="text-xs text-gray-400 text-left leading-tight">
           <div>이전 업데이트 시간: {last || '-'}</div>
           <div>최근 업데이트 시간: {now}</div>
