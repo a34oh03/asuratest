@@ -25,6 +25,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+        
         <meta name="google-site-verification" content="t9ml4SmQ6_aa8F90WsJ22hlM3xSr-5F-4P8XpAhjpis" />
       </head>
       <body
