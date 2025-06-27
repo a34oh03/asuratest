@@ -746,7 +746,12 @@ function MatchRecordsBlockList({
             )}
 
             {/* 3) 중앙 정보 그리드 */}
-            <div className="flex-1 grid grid-cols-4 gap-x-4 text-sm items-center">
+            <div
+              className={`
+                flex-1 grid gap-x-4 text-sm items-center
+                ${rec.mode === '팀 데스매치' ? 'grid-cols-3' : 'grid-cols-4'}
+              `}
+            >
               <div className="flex flex-col items-center">
                 <span className="font-semibold">
                   {rec.teamsKill} / {rec.myKill} / {rec.assists}
