@@ -754,7 +754,7 @@ function MatchRecordsBlockList({
                 <span className="text-xs text-gray-500">TK / K / A</span>
               </div>
 
-              {rec.mode !== '배틀로얄 - 팀 데스매치' && (
+              {rec.mode !== '팀 데스매치' && (
                 <div className="flex flex-col items-center">
                       <span className="flex items-baseline">
                         <span className="font-semibold">
@@ -772,8 +772,6 @@ function MatchRecordsBlockList({
                         </span>
                       )}
                       </span>
-
-                      {/* 팀 데스매치가 아닐 때만 레이블 또는 MMR 출력 */}
                         {rec.rpLabel ? (
                           <span className="text-xs text-gray-500">{rec.rpLabel}</span>
                         ) : (
