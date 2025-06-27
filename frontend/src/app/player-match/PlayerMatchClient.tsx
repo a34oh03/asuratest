@@ -121,12 +121,12 @@ export default function PlayerMatchPage() {
               />
               <span>주인장 세션이 만료되어서 못봐요.</span>
               <a
-                href="https://gall.dcinside.com/asurajang/20184"
+                href="https://gall.dcinside.com/asurajang/11788"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 underline"
               >
-                https://gall.dcinside.com/asurajang/20184
+                https://gall.dcinside.com/asurajang/11788
               </a>
             </div>
           );
@@ -233,15 +233,20 @@ function AllStats({
   // ===================================================================
   const soloBaseRP = stats.brSoloStats?.rankPoint ?? 0;
   const trioBaseRP = stats.brTrioStats?.rankPoint ?? 0;
-
+  const teamDeathMatchBaseRP = 0;
   const soloRecords = (record.matchRecords ?? []).filter(
     r => Number(r.teamMode) === 1
   );
   console.log("soloRecords : ",soloRecords);
   const trioRecords = (record.matchRecords ?? []).filter(
-    r => Number(r.teamMode) === 2
+    r => Number(r.teamMode) === 2 &&
+         Number(r.matchMode) === 1
   );
-  const allRecords = [...soloRecords, ...trioRecords]
+  const teamDeathMatchRecords = (record.matchRecords ?? []).filter(
+    r => Number(r.teamMode) === 2 && 
+         Number(r.matchMode) === 2
+  );
+  const allRecords = [...soloRecords, ...trioRecords, ...teamDeathMatchRecords]
   .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 
   function getChampSummary(records: any[]) {
@@ -328,12 +333,14 @@ function AllStats({
       ? getChampSummary(soloRecords)
       : mode === 'trio'
       ? getChampSummary(trioRecords)
+      : mode === 'teamDeathMatch'
+      ? getChampSummary(teamDeathMatchRecords)
       : getChampSummary(allRecords)
   const soloWithRP = calcTotalRP(soloRecords, soloBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
   const trioWithRP = calcTotalRP(trioRecords, trioBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-
+  const teamDeathMatchWithRP = calcTotalRP(teamDeathMatchRecords, teamDeathMatchBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
   // 전체(솔로+트리오)를 모아서 시간 내림차순 정렬 → 최근 20개
-  const allWithRP = [...soloWithRP, ...trioWithRP]
+  const allWithRP = [...soloWithRP, ...trioWithRP, ...teamDeathMatchWithRP]
     .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
   // ===================================================================
@@ -413,6 +420,8 @@ function AllStats({
       ? getRecentSummary(soloRecords)
       : mode === 'trio'
       ? getRecentSummary(trioRecords)
+      : mode === 'teamDeathMatch'
+      ? getRecentSummary(teamDeathMatchRecords)
       : getRecentSummary(allRecords)
 
   // 화면에 뿌릴 statsArr, recentRanks
@@ -440,6 +449,8 @@ function AllStats({
       ? soloWithRP
       : mode === 'trio'
       ? trioWithRP
+      : mode === 'teamDeathMatch'
+      ? teamDeathMatchWithRP
       : allWithRP;
 
   // ===================================================================
@@ -698,7 +709,7 @@ function MatchRecordsBlockList({
                   className="w-full h-full object-cover"
                 />
               </div>
-            ) : rec.mode === '배틀로얄 - 트리오' ? (
+            ) : (rec.mode === '배틀로얄 - 트리오' || rec.mode === '팀 데스매치') ? (
               // 트리오 모드: 메인 + 아군 2명
               <div className="flex items-center flex-shrink-0">
                 {/* 메인 챔피언 */}
@@ -742,29 +753,41 @@ function MatchRecordsBlockList({
                 </span>
                 <span className="text-xs text-gray-500">TK / K / A</span>
               </div>
+
               <div className="flex flex-col items-center">
-                <span className="flex items-baseline">
-                  <span className="font-semibold">
-                    {Number(rec.totalRP).toLocaleString()}
-                  </span>
-                  {rec.delta !== 0 && (
-                  <span
-                    className={`ml-1 font-bold ${
-                      rec.delta < 0 ? 'text-blue-600' : 'text-red-600'
-                    }`}
-                  >
-                    {rec.delta < 0
-                      ? `(${rec.delta})`
-                      : `(+${rec.delta})`}
-                  </span>
-                )}
-                </span>
-                {rec.rpLabel ? (
-                  <span className="text-xs text-gray-500">{rec.rpLabel}</span>
+                {rec.totalRP === 0 && rec.delta === 0 ? (
+                  <span className="font-semibold">-</span>
                 ) : (
-                  <span className="text-xs text-gray-500">MMR: {rec.mmr}</span>
+                  <>
+                    <span className="flex items-baseline">
+                      <span className="font-semibold">
+                        {Number(rec.totalRP).toLocaleString()}
+                      </span>
+                      {rec.delta !== 0 && (
+                      <span
+                        className={`ml-1 font-bold ${
+                          rec.delta < 0 ? 'text-blue-600' : 'text-red-600'
+                        }`}
+                      >
+                        {rec.delta < 0
+                          ? `(${rec.delta})`
+                          : `(+${rec.delta})`}
+                      </span>
+                    )}
+                    </span>
+                    
+                    {/* 팀 데스매치가 아닐 때만 레이블 또는 MMR 출력 */}
+                    {rec.mode !== '팀 데스매치' && (
+                      rec.rpLabel ? (
+                        <span className="text-xs text-gray-500">{rec.rpLabel}</span>
+                      ) : (
+                        <span className="text-xs text-gray-500">MMR: {rec.mmr}</span>
+                      )
+                    )}
+                  </>
                 )}
               </div>
+              
               <div className="flex flex-col items-center">
                 <span className="font-semibold">
                   {(rec.dmgPut).toLocaleString()}
@@ -780,42 +803,45 @@ function MatchRecordsBlockList({
             </div>
             </div>
 
+            
             {/* 4) 장비 슬롯 */}
-            {rec.items ? (
-              <div className="grid grid-cols-3 gap-1">
-                {(() => {
-                  const names = rec.items.split(',').map((s: string) => s.trim());
-                  const levels = rec.astra.split(',').map((s: string) => s.trim());
-                  const len = Math.min(names.length, levels.length);
-                  return names.slice(0, len).map((name: string, i: number) => {
-                    const level = levels[i];
-                    return (
-                      <div
-                        key={i}
-                        className="relative w-12 h-12 border border-gray-300 overflow-hidden rounded"
-                      >
-                        <CachedImageWithFallback
-                          src={`/item/${name}.png`}
-                          fallback="/item/default.png"
-                          alt={name}
-                          className="w-full h-full object-contain"
-                        />
-                        <span className="
-                          absolute bottom-0 right-0
-                          bg-black bg-opacity-50
-                          text-yellow-300 text-[10px] font-bold
-                          px-0.5
-                        ">
-                          {level}↑
-                        </span>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            ) : (
-              <div className="text-xs text-gray-400">장비 정보 없음</div>
-            )}
+            {rec.mode !== '팀 데스매치' ? (
+              rec.items ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {(() => {
+                    const names = rec.items.split(',').map((s: string) => s.trim());
+                    const levels = rec.astra.split(',').map((s: string) => s.trim());
+                    const len = Math.min(names.length, levels.length);
+                    return names.slice(0, len).map((name: string, i: number) => {
+                      const level = levels[i];
+                      return (
+                        <div
+                          key={i}
+                          className="relative w-12 h-12 border border-gray-300 overflow-hidden rounded"
+                        >
+                          <CachedImageWithFallback
+                            src={`/item/${name}.png`}
+                            fallback="/item/default.png"
+                            alt={name}
+                            className="w-full h-full object-contain"
+                          />
+                          <span className="
+                            absolute bottom-0 right-0
+                            bg-black bg-opacity-50
+                            text-yellow-300 text-[10px] font-bold
+                            px-0.5
+                          ">
+                            {level}↑
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+                ) : (
+                <div className="text-xs text-gray-400">장비 정보 없음</div>
+                )
+             ) : null}
           </div>
         );
       })}

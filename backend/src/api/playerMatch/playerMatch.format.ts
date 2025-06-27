@@ -5,6 +5,7 @@ import {
   ITEM_NAMES,
   PLAY_MAP,
   TEAM_MAP,
+  MATCH_MAP,
 } from './constants/playerMatch.constants';
 import {
   fmtNum,
@@ -179,7 +180,7 @@ export function formatSingleMatchRecord(rec: any) {
   const allyChampType1 = CHAMP_NAMES[rec.allyChampType1] || rec.allyChampType1;
   const allyChampType2 = CHAMP_NAMES[rec.allyChampType2] || rec.allyChampType2;
   const rank = fmtNum(rec.matchRank ?? 0);
-  const mode = `${PLAY_MAP[rec.playMode] || '-'} - ${TEAM_MAP[rec.teamMode] || '-'}`;
+  const mode =  resolveMode(rec.playMode, rec.teamMode, rec.matchMode);
   const champ = CHAMP_NAMES[rec.champType] || rec.champType;
   const dmgPut = fmtNum(rec.dmgPut || 0);
   const dmgGot = fmtNum(rec.dmgGot || 0);
@@ -187,6 +188,7 @@ export function formatSingleMatchRecord(rec: any) {
   const teamsKill = fmtNum(rec.teamsKill || 0);
   const playMode = rec.playMode || 1;
   const teamMode = rec.teamMode || 1;
+  const matchMode = rec.matchMode || 1;
   const assists = fmtNum(rec.assists || 0);
   const delta = fmtNum(rec.deltaRP || 0);
   const mmr = MMR_LABELS[rec.mmrGroupTitle] || rec.mmrGroupTitle;
@@ -216,6 +218,7 @@ export function formatSingleMatchRecord(rec: any) {
     teamsKill,
     playMode,
     teamMode,
+    matchMode,
     assists,
     delta,
     mmr,
@@ -224,4 +227,32 @@ export function formatSingleMatchRecord(rec: any) {
     items: items.join(', '),
     astra: astra.join(', '),
   };
+}
+
+// mode 문자열을 결정하는 헬퍼 함수  
+function resolveMode(playMode: number, teamMode: number, matchMode: number): string {
+  // 2-1) 솔로 모드  
+  if (playMode === 1 && teamMode === 1) {
+    // "배틀로얄 - 솔로"
+    return `${PLAY_MAP[playMode]} - ${TEAM_MAP[teamMode]}`;
+  }
+
+  // 2-2) 트리오 vs 팀 데스매치 구분  
+  if (playMode === 1 && teamMode === 2) {
+    // matchMode에 따라 "배틀로얄 - 트리오" or "팀 데스매치"
+    // ※ "팀 데스매치"는 PLAY_MAP를 쓰지 않고 MATCH_MAP만 사용
+    if (matchMode === 1) {
+      // "배틀로얄 - 트리오"
+      return `${PLAY_MAP[playMode]} - ${MATCH_MAP[matchMode]}`;
+    }
+    if (matchMode === 2) {
+      // "팀 데스매치" (PLAY_MAP 생략)
+      return MATCH_MAP[matchMode];
+    }
+  }
+
+  // 2-3) 그 외의 조합: 기본 포맷으로
+  const playStr = PLAY_MAP[playMode] ?? '-';
+  const teamStr = TEAM_MAP[teamMode] ?? '-';
+  return `${playStr} - ${teamStr}`;
 }

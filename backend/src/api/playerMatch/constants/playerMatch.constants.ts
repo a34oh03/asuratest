@@ -83,3 +83,8 @@ export const TEAM_MAP: Record<number, string> = {
   1: '솔로',
   2: '트리오',
 };
+
+export const MATCH_MAP: Record<number, string> = {
+  1: '트리오',          // teamMode===2 && matchMode===1일 때
+  2: '팀 데스매치',    // teamMode===2 && matchMode===2일 때
+};
