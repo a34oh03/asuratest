@@ -754,39 +754,33 @@ function MatchRecordsBlockList({
                 <span className="text-xs text-gray-500">TK / K / A</span>
               </div>
 
-              <div className="flex flex-col items-center">
-                {rec.totalRP === 0 && rec.delta === 0 ? (
-                  <span className="font-semibold">-</span>
-                ) : (
-                  <>
-                    <span className="flex items-baseline">
-                      <span className="font-semibold">
-                        {Number(rec.totalRP).toLocaleString()}
+              {rec.mode !== '배틀로얄 - 팀 데스매치' && (
+                <div className="flex flex-col items-center">
+                      <span className="flex items-baseline">
+                        <span className="font-semibold">
+                          {Number(rec.totalRP).toLocaleString()}
+                        </span>
+                        {rec.delta !== 0 && (
+                        <span
+                          className={`ml-1 font-bold ${
+                            rec.delta < 0 ? 'text-blue-600' : 'text-red-600'
+                          }`}
+                        >
+                          {rec.delta < 0
+                            ? `(${rec.delta})`
+                            : `(+${rec.delta})`}
+                        </span>
+                      )}
                       </span>
-                      {rec.delta !== 0 && (
-                      <span
-                        className={`ml-1 font-bold ${
-                          rec.delta < 0 ? 'text-blue-600' : 'text-red-600'
-                        }`}
-                      >
-                        {rec.delta < 0
-                          ? `(${rec.delta})`
-                          : `(+${rec.delta})`}
-                      </span>
-                    )}
-                    </span>
-                    
-                    {/* 팀 데스매치가 아닐 때만 레이블 또는 MMR 출력 */}
-                    {rec.mode !== '팀 데스매치' && (
-                      rec.rpLabel ? (
-                        <span className="text-xs text-gray-500">{rec.rpLabel}</span>
-                      ) : (
-                        <span className="text-xs text-gray-500">MMR: {rec.mmr}</span>
-                      )
-                    )}
-                  </>
-                )}
-              </div>
+
+                      {/* 팀 데스매치가 아닐 때만 레이블 또는 MMR 출력 */}
+                        {rec.rpLabel ? (
+                          <span className="text-xs text-gray-500">{rec.rpLabel}</span>
+                        ) : (
+                          <span className="text-xs text-gray-500">MMR: {rec.mmr}</span>
+                        )}
+                </div>
+              )}
               
               <div className="flex flex-col items-center">
                 <span className="font-semibold">
