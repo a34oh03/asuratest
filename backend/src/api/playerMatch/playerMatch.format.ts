@@ -251,6 +251,10 @@ function resolveMode(playMode: number, teamMode: number, matchMode: number): str
       // "팀 데스매치" (PLAY_MAP 생략)
       return MATCH_MAP[matchMode];
     }
+    if (matchMode === 4) {
+      // "태그매치" (PLAY_MAP 생략)
+      return MATCH_MAP[matchMode];
+    }
   }
 
   // 2-3) 그 외의 조합: 기본 포맷으로

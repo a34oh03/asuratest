@@ -563,9 +563,9 @@ function AllStats({
               : mode === 'trio'
               ? '트리오 모드'
               : mode === 'teamDeathMatch'
-              ? '팀 데스매치 모드'
+              ? '팀 데스매치'
               : mode === 'tagMatch'
-              ? '태그매치 모드'
+              ? '태그매치'
               : '전체 모드'
               
               }
