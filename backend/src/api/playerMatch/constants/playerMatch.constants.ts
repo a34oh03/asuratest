@@ -15,6 +15,7 @@ export const CHAMP_NAMES: Record<number, string> = {
   11: '카이사치',
   12: '레이',
   13: '웨이',
+  15: '에린',
   17: '쇼요',
 };
 
@@ -87,5 +88,5 @@ export const TEAM_MAP: Record<number, string> = {
 export const MATCH_MAP: Record<number, string> = {
   1: '트리오',          // teamMode===2 && matchMode===1일 때
   2: '팀 데스매치',    // teamMode===2 && matchMode===2일 때
-  3: '태그매치',       // teamMode===2 && matchMode===4일 때
+  4: '태그매치',       // teamMode===2 && matchMode===4일 때
 };

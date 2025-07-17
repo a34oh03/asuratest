@@ -129,7 +129,7 @@ export function getTopPlayersByChampion(
 }
 
 
-export function compareRankings(prev: any[], curr: any[]): any[] {
+export function compareRankings(prev: any[] = [], curr: any[] = []): any[] {
   // 이전 플레이어 정보 맵: nickname -> (rank, score)
   const prevMap: Record<string, [number, number]> = {};
   prev.forEach((p, i) => {

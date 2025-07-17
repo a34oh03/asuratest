@@ -109,7 +109,15 @@ export class RankingSummaryService {
     if (backupData) {
       soloPlayers = compareRankings(backupData.solo, soloRaw.players);
       trioPlayers = compareRankings(backupData.trio, trioRaw.players);
-      tagMatchPlayers = compareRankings(backupData.tagMatch, tagMatchRaw.players);
+      if (backupData.tagMatch) {
+        tagMatchPlayers = compareRankings(backupData.tagMatch, tagMatchRaw.players);
+      } else {
+        tagMatchPlayers = tagMatchRaw.players.map((p: any) => ({
+          ...p,
+          rank_change: 'new',
+          score_change: null,
+        }));
+      }
     } else {
       soloPlayers = soloRaw.players.map((p: any) => ({
         ...p,
@@ -139,8 +147,10 @@ export class RankingSummaryService {
     return {
       solo_players: soloPlayers,
       trio_players: trioPlayers,
+      tagMatch_players: tagMatchPlayers,
       solo_stats: soloRaw.championStats,
       trio_stats: trioRaw.championStats,
+      tagMatch_stats: tagMatchRaw.championStats,
       last_backup: await this.backupService.getLatestTime(),
       now_time: DateTime.now()
         .setZone('Asia/Seoul')
