@@ -159,7 +159,7 @@ export default function RankingClient() {
       />
 
       {/* ▶ 챔피언 차트 (현재는 mode 상관없이 3종류 모두 보여주는 구조를 유지) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
         {/*mode === 'tag' && (*/
           <ChampionBarChart
             labels={data.tagMatch_stats.labels}
