@@ -54,7 +54,7 @@ export function formatAggregateStatsBlock(block: any, name: string) {
     firstRanks = 0,
     kills = 0,
     avgMatchRank = 0,
-    rankPoiont = 0,
+    rp = 0,
     avgDamagePut = 0,
     purgatoryEscapes = 0,
     playedChamps = [],
@@ -62,7 +62,7 @@ export function formatAggregateStatsBlock(block: any, name: string) {
   const avgKill = matches ? kills / matches : 0;
   return {
     name,
-    rankPoint: fmtNum(rankPoiont),
+    rp: fmtNum(rp),
     rankPosition: fmtNum(rankPos + 1),
     matches: fmtNum(matches),
     firstRanks: `${fmtNum(firstRanks)} (${avgPercent(firstRanks, matches)})`,
@@ -253,12 +253,13 @@ function resolveMode(playMode: number, teamMode: number, matchMode: number): str
       // "팀 데스매치" (PLAY_MAP 생략)
       return MATCH_MAP[matchMode];
     }
-  }
-  else if (playMode === 2 && teamMode === 2) {
     if (matchMode === 4) {
       // "태그매치" (PLAY_MAP 생략)
       return MATCH_MAP[matchMode];
     }
+  }
+  else if (playMode === 2 && teamMode === 2) {
+
   }
 
   // 2-3) 그 외의 조합: 기본 포맷으로

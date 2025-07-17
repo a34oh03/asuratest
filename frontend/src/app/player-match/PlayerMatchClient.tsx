@@ -232,10 +232,10 @@ function AllStats({
   // ===================================================================
   // 1) RP 계산 (솔로/트리오)
   // ===================================================================
-  const soloBaseRP = stats.brSoloStats?.rankPoint ?? 0;
-  const trioBaseRP = stats.brTrioStats?.rankPoint ?? 0;
+  const soloBaseRP = stats.brSoloStats?.rp ?? 0; //rankPoint
+  const trioBaseRP = stats.brTrioStats?.rp ?? 0;
   const teamDeathMatchBaseRP = 0;
-  const tagMatchBaseRP = stats.tagMatchStats?.rankPoint ?? 9999;
+  const tagMatchBaseRP = stats.tagMatchStats?.rp ?? 9999;
   const soloRecords = (record.matchRecords ?? []).filter(
     r => Number(r.teamMode) === 1
   );
@@ -703,29 +703,45 @@ function MatchRecordsBlockList({
   }
 
   return (
-    <div className="my-6 space-y-4 ">
+    <div className="my-6 space-y-4">
       {records.map((rec, idx) => {
         const rankNum = Number(rec.rank);
-
+        const isTagMatch = rec.mode === "태그매치";
+  
         // 왼쪽 컬러 바 설정 
-        let leftColor = "border-l-8 border-l-gray-400";       // 기본
-        if (rankNum === 1)      leftColor = "border-l-8 border-l-yellow-300";
-        else if (rankNum === 2) leftColor = "border-l-8 border-l-blue-400";
-        else if (rankNum === 3) leftColor = "border-l-8 border-l-red-400";
-
+        let leftColor = "border-l-8 border-l-gray-400"; // 기본 회색
+  
+        if (isTagMatch) {
+          if (rankNum === 1) leftColor = "border-l-8 border-l-yellow-300"; // 승리
+          else if (rankNum === 2) leftColor = "border-l-8 border-l-red-400"; // 패배
+        } else {
+          if (rankNum === 1) leftColor = "border-l-8 border-l-yellow-300";
+          else if (rankNum === 2) leftColor = "border-l-8 border-l-blue-400";
+          else if (rankNum === 3) leftColor = "border-l-8 border-l-red-400";
+        }
+  
+        // 태그매치일 경우 승/패 텍스트 처리
+        const rankText = isTagMatch
+          ? rankNum === 1
+            ? "승리"
+            : rankNum === 2
+            ? "패배"
+            : `#${rankNum}` // 그 외는 그냥 숫자
+          : `#${rankNum}`;
+  
         return (
           <div
             key={`${rec.rank}-${idx}`}
             className={`
               relative flex items-center space-x-6 bg-white rounded-lg p-4
               shadow-sm
-              border-1 border-gray-300      /* ← 전체 테두리 진하게 */
-              ${leftColor}              /* ← 왼쪽 컬러 바 */
+              border-1 border-gray-300
+              ${leftColor}
             `}
           >
             {/* 1) 순위 · 모드 · 시간 블록 */}
             <div className="flex flex-col text-sm w-25 flex-none">
-              <span className="font-bold text-lg">#{rankNum}</span>
+              <span className="font-bold text-lg">{rankText}</span>
               <span>{rec.mode}</span>
               <span className="text-gray-500">{rec.playTime}</span>
               <span className="text-gray-500">{rec.elapsed}</span>
