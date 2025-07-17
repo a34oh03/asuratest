@@ -16,6 +16,7 @@ import {
 
 export interface RankingParams {
   userNetID: string;
+  sessionSecret: string;
   region: string;
   rankingType: number;
   champType: number;
@@ -39,6 +40,7 @@ export class RankingService {
     const API_URL = 'http://live.surajang.com:6557/ranking/getTopRankN';
     const queryString = new URLSearchParams({
       userNetID: params.userNetID,
+      sessionSecret: params.sessionSecret,
       region: params.region,
       rankingType: params.rankingType.toString(),
       champType: params.champType.toString(),
