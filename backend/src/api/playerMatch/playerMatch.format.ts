@@ -247,7 +247,7 @@ function resolveMode(playMode: number, teamMode: number, matchMode: number): str
     // ※ "팀 데스매치"는 PLAY_MAP를 쓰지 않고 MATCH_MAP만 사용
     if (matchMode === 1) {
       // "배틀로얄 - 트리오"
-      return `${PLAY_MAP[playMode]} - ${MATCH_MAP[matchMode]}`;
+      return `${PLAY_MAP[matchMode]} - ${MATCH_MAP[matchMode]}`;
     }
     if (matchMode === 2) {
       // "팀 데스매치" (PLAY_MAP 생략)
