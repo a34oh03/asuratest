@@ -109,7 +109,7 @@ export default function RankingClient() {
     switch (mode) {
       case 'solo': return '솔로를 빛낸 100명의 위인들';
       case 'trio': return 'Top 100 랭커 (트리오)';
-      case 'tag': return '태그매치 영웅 Top 100';
+      case 'tag': return 'Top 100 랭커 (태그매치)';
     }
   };
 
@@ -123,23 +123,24 @@ export default function RankingClient() {
       {/* ▶ 모드 선택 버튼 */}
       <div className="flex gap-2 justify-center mb-4">
         <button
-          className={`px-4 py-2 rounded shadow ${mode === 'trio' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => setMode('trio')}
-        >
-          트리오
-        </button>
-        <button
-          className={`px-4 py-2 rounded shadow ${mode === 'solo' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          onClick={() => setMode('solo')}
-        >
-          솔로
-        </button>
-        <button
           className={`px-4 py-2 rounded shadow ${mode === 'tag' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           onClick={() => setMode('tag')}
         >
           태그매치
         </button>
+        <button
+          className={`px-4 py-2 rounded shadow ${mode === 'trio' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => setMode('trio')}
+        >
+          트리오
+        </button>
+  {/*      <button
+          className={`px-4 py-2 rounded shadow ${mode === 'solo' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          onClick={() => setMode('solo')}
+        >
+          솔로
+        </button>*/}
+
       </div>
 
       {/* ▶ 제목 및 시간 */}
@@ -159,21 +160,25 @@ export default function RankingClient() {
 
       {/* ▶ 챔피언 차트 (현재는 mode 상관없이 3종류 모두 보여주는 구조를 유지) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
+        {mode === 'tag' && (
+          <ChampionBarChart
+            labels={data.tagMatch_stats.labels}
+            counts={data.tagMatch_stats.counts}
+            title="자주 사용된 주 캐릭터 (태그매치)"
+          />
+        )}
+
         <ChampionBarChart
           labels={data.trio_stats.labels}
           counts={data.trio_stats.counts}
           title="자주 사용된 주 캐릭터 (트리오)"
         />
-        <ChampionBarChart
+  {/*      <ChampionBarChart
           labels={data.solo_stats.labels}
           counts={data.solo_stats.counts}
           title="자주 사용된 주 캐릭터 (솔로)"
-        />
-        <ChampionBarChart
-          labels={data.tagMatch_stats.labels}
-          counts={data.tagMatch_stats.counts}
-          title="자주 사용된 주 캐릭터 (태그매치)"
-        />
+        />*/}
+
       </div>
 
       <hr className="my-10 border-gray-300" />

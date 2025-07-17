@@ -196,13 +196,15 @@ export function formatSingleMatchRecord(rec: any) {
   const mmr = MMR_LABELS[rec.mmrGroupTitle] || rec.mmrGroupTitle;
   const region = REGION_LABELS[rec.region] || rec.region;
   const playTime = formatPlayTime(rec.playTimeSec || 0);
+  const br = rec.brRecord || {};
+
   // 아이템 정보 가공
   const items = [1, 4, 3, 5, 6, 2].map((s) => {
-    const idx = rec[`astraIndex${s}`] || 0;
+    const idx = br[`astraIndex${s}`] || 0;
     return `${ITEM_NAMES[idx] || idx}`;
   });
   const astra = [1, 4, 3, 5, 6, 2].map((s) => {
-    const lv = rec[`astraLv${s}`] || 0;
+    const lv = br[`astraLv${s}`] || 0;
     return `${lv}`;
   });
 
@@ -240,7 +242,7 @@ function resolveMode(playMode: number, teamMode: number, matchMode: number): str
   }
 
   // 2-2) 트리오 vs 팀 데스매치 구분  
-  if (playMode === 1 && teamMode === 2) {
+  if (playMode === 2 && teamMode === 2) {
     // matchMode에 따라 "배틀로얄 - 트리오" or "팀 데스매치"
     // ※ "팀 데스매치"는 PLAY_MAP를 쓰지 않고 MATCH_MAP만 사용
     if (matchMode === 1) {

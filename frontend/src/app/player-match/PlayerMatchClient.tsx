@@ -235,7 +235,7 @@ function AllStats({
   const soloBaseRP = stats.brSoloStats?.rankPoint ?? 0;
   const trioBaseRP = stats.brTrioStats?.rankPoint ?? 0;
   const teamDeathMatchBaseRP = 0;
-  const tagMatchBaseRP = stats.tagMatchStats?.rankPoint ?? 0;
+  const tagMatchBaseRP = stats.tagMatchStats?.rankPoint ?? 9999;
   const soloRecords = (record.matchRecords ?? []).filter(
     r => Number(r.teamMode) === 1
   );
@@ -580,13 +580,20 @@ function AllStats({
       {/* 요약 블록 */}
       {mode === 'all' ? (
         <div className="flex flex-col md:flex-row gap-4 mb-6">
+
           <div className="flex-1 min-w-[240px] mt-4">
+            <StatsBlock
+              title="태그매치 요약"
+              stats={stats.tagMatchStats}
+              locale={locale}
+            />
+  {/*        <div className="flex-1 min-w-[240px] mt-4">
             <StatsBlock
               title="솔로 요약"
               stats={stats.brSoloStats}
               locale={locale}
             />
-          </div>
+          </div>*/}
           <div className="flex-1 min-w-[240px] mt-4">
             <StatsBlock
               title="트리오 요약"
@@ -594,12 +601,6 @@ function AllStats({
               locale={locale}
             />
           </div>
-          <div className="flex-1 min-w-[240px] mt-4">
-            <StatsBlock
-              title="태그매치 요약"
-              stats={stats.tagMatchStats}
-              locale={locale}
-            />
           </div>
         </div>
       ) : (

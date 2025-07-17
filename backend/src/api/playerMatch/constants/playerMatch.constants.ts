@@ -15,6 +15,7 @@ export const CHAMP_NAMES: Record<number, string> = {
   11: '카이사치',
   12: '레이',
   13: '웨이',
+  14: '브룬',
   15: '에린',
   17: '쇼요',
 };
