@@ -18,7 +18,7 @@ import { Console } from "console";
 interface StatsData {
   brSoloStats: any;
   brTrioStats: any;
-  brTagMatchStats: any;
+  tagMatchStats: any;
   mostPlayedChampType?: string;
   mostPlayedChampName?: string;
   // playedChamps는 각 stats 내부에 존재
@@ -235,7 +235,7 @@ function AllStats({
   const soloBaseRP = stats.brSoloStats?.rankPoint ?? 0;
   const trioBaseRP = stats.brTrioStats?.rankPoint ?? 0;
   const teamDeathMatchBaseRP = 0;
-  const tagMatchBaseRP = 0;
+  const tagMatchBaseRP = stats.tagMatchStats?.rankPoint ?? 0;
   const soloRecords = (record.matchRecords ?? []).filter(
     r => Number(r.teamMode) === 1
   );
@@ -597,7 +597,7 @@ function AllStats({
           <div className="flex-1 min-w-[240px] mt-4">
             <StatsBlock
               title="태그매치 요약"
-              stats={stats.brTagMatchStats}
+              stats={stats.tagMatchStats}
               locale={locale}
             />
           </div>
@@ -612,7 +612,7 @@ function AllStats({
                 : mode === 'trio'
                 ? stats.brTrioStats!
                 : mode === 'tagMatch'
-                ? stats.brTagMatchStats!
+                ? stats.tagMatchStats!
                 : stats.brSoloStats!
             }
             locale={locale}

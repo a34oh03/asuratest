@@ -5,7 +5,7 @@ import { NoTranslate } from '../utils/NoTranslate';
 
 interface Props {
   players: Player[];
-  mode: 'solo' | 'trio';
+  mode: 'solo' | 'trio' | 'tag';
 }
 
 export default function RankingTable({ players }: Props) {

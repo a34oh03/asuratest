@@ -16,8 +16,10 @@ export interface ChampionStats {
 export interface RankingSummary {
   solo_players: Player[];
   trio_players: Player[];
+  tagMatch_players: Player[];
   solo_stats: ChampionStats;
   trio_stats: ChampionStats;
+  tagMatch_stats: ChampionStats;
   last_backup: string | null;
   now_time: string;
 }
