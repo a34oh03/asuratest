@@ -20,6 +20,7 @@ import {
 export function getMostPlayedChampionType(
   soloBlock: any,
   trioBlock: any,
+  tagMatchBlock: any,
 ): string | null {
   // 두 블록의 playedChamps를 합산하여 가장 많이 플레이한 champType 반환
   const countMap: Record<string, number> = {};
@@ -32,6 +33,7 @@ export function getMostPlayedChampionType(
   };
   if (soloBlock?.playedChamps) merge(soloBlock.playedChamps);
   if (trioBlock?.playedChamps) merge(trioBlock.playedChamps);
+  if (tagMatchBlock?.playedChamps) merge(tagMatchBlock.playedChamps);
   let maxKey: string | null = null;
   let maxVal = 0;
   for (const [key, val] of Object.entries(countMap)) {

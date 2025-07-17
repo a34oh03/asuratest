@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 
-export type TabType = "all" | "solo" | "trio" | "teamDeathMatch";
+export type TabType = "all" | "solo" | "trio" | "teamDeathMatch" | "tagMatch";
 
 interface PlayerMatchTabsProps {
   current: TabType;
@@ -12,7 +12,8 @@ const tabLabels = [
   { key: "all", label: "전체" },
   { key: "solo", label: "솔로" },
   { key: "trio", label: "트리오" },
-  { key: "teamDeathMatch", label: "팀 데스매치" }
+  { key: "teamDeathMatch", label: "팀 데스매치" },
+  { key: "tagMatch", label: "태그매치" }
 ];
 
 export default function PlayerMatchTabs({ current, onChange }: PlayerMatchTabsProps) {

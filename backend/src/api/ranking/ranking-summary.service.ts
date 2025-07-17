@@ -5,6 +5,7 @@ import { getCachedBackupData } from './backup/backup-cache.util';
 import { compareRankings } from './ranking.util';
 import { DateTime } from 'luxon';
 import { BackupService } from './backup/backup.service';
+import { getSessionSecret } from '../utility/utility';
 
 const CACHE_TTL = 60 * 60 * 2; // 2시간
 
@@ -44,11 +45,12 @@ export class RankingSummaryService {
     const primaryId = this.userQueue[0];
     try {
       // 솔로/트리오 데이터를 병렬로 가져옴
-      let soloRaw, trioRaw;
+      let soloRaw, trioRaw, tagMatchRaw;
       try {
-        [soloRaw, trioRaw] = await Promise.all([
-          this.rankingService.getRankingData(this.buildParams(primaryId, 1)),
-          this.rankingService.getRankingData(this.buildParams(primaryId, 2)),
+        [soloRaw, trioRaw, tagMatchRaw] = await Promise.all([
+          this.rankingService.getRankingData(this.buildParams(primaryId, 1, 1)),
+          this.rankingService.getRankingData(this.buildParams(primaryId, 2, 1)),
+          this.rankingService.getRankingData(this.buildParams(primaryId, 2, 2)),
         ]);
       } catch (e) {
         // 개별 실패 시 전체 catch로 이동
@@ -59,7 +61,7 @@ export class RankingSummaryService {
       this.userCache = { uid: primaryId, timestamp: Date.now() / 1000 };
 
       // 바로 요약 생성
-      return this.buildSummary(soloRaw, trioRaw, backupData);
+      return this.buildSummary(soloRaw, trioRaw, tagMatchRaw, backupData);
     } catch (e) {
       // 첫 번째 ID가 실패하면, 로깅 후 전체 탐색 로직으로 폴백
       console.warn(
@@ -81,11 +83,12 @@ export class RankingSummaryService {
     const validUid = await this.getValidUserId(userIds);
 
     // 2) validUid로 솔로/트리오 데이터를 병렬로 재조회
-    let soloRaw, trioRaw;
+    let soloRaw, trioRaw, tagMatchRaw;
     try {
-      [soloRaw, trioRaw] = await Promise.all([
-        this.rankingService.getRankingData(this.buildParams(validUid, 1)),
-        this.rankingService.getRankingData(this.buildParams(validUid, 2)),
+      [soloRaw, trioRaw, tagMatchRaw] = await Promise.all([
+        this.rankingService.getRankingData(this.buildParams(validUid, 1, 1)),
+        this.rankingService.getRankingData(this.buildParams(validUid, 2, 1)),
+        this.rankingService.getRankingData(this.buildParams(validUid, 2, 2)),
       ]);
     } catch (e) {
       // 에러 발생 시 로깅 및 예외 전파
@@ -94,18 +97,19 @@ export class RankingSummaryService {
     }
 
     // 3) 요약 생성
-    return this.buildSummary(soloRaw, trioRaw, backupData);
+    return this.buildSummary(soloRaw, trioRaw, tagMatchRaw, backupData);
   }
 
   /**
    * 주어진 raw 데이터를 받아, API 응답용 객체로 포맷
    */
-  private async buildSummary(soloRaw: any, trioRaw: any, backupData: any) {
+  private async buildSummary(soloRaw: any, trioRaw: any, tagMatchRaw: any, backupData: any) {
     // 1) 변화량 계산
-    let soloPlayers, trioPlayers;
+    let soloPlayers, trioPlayers, tagMatchPlayers;
     if (backupData) {
       soloPlayers = compareRankings(backupData.solo, soloRaw.players);
       trioPlayers = compareRankings(backupData.trio, trioRaw.players);
+      tagMatchPlayers = compareRankings(backupData.tagMatch, tagMatchRaw.players);
     } else {
       soloPlayers = soloRaw.players.map((p: any) => ({
         ...p,
@@ -157,7 +161,7 @@ export class RankingSummaryService {
     ) {
       try {
         await this.rankingService.getRankingData(
-          this.buildParams(this.userCache.uid, 1),
+          this.buildParams(this.userCache.uid, 1, 1),
         );
         return this.userCache.uid;
       } catch {
@@ -169,7 +173,7 @@ export class RankingSummaryService {
     for (const id of userIds) {
       try {
         await this.rankingService.getRankingData(
-          this.buildParams(id, 1),
+          this.buildParams(id, 1, 1),
         );
         // 성공 시 캐시 & 큐 업데이트
         this.userCache = { uid: id, timestamp: now };
@@ -186,14 +190,15 @@ export class RankingSummaryService {
   }
 
   /** 요청 파라미터 구조화 */
-  private buildParams(userNetID: string, teamMode: number) {
+  private buildParams(userNetID: string, teamMode: number, rankingType: number) {
     return {
       userNetID,
+      sessionSecret: getSessionSecret(),
       teamMode,
       region: 'ES',
-      rankingType: 1,
+      rankingType,
       champType: 0,
-      rowCount: 100,
+      rowCount: 500,
     } as RankingParams;
   }
 

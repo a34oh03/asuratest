@@ -10,6 +10,7 @@ import { RankingService } from './ranking.service';
 import { GetRankingDto } from './dto/get-ranking.dto';
 import { Req } from '@nestjs/common';
 import { Request } from 'express';
+import { getSessionSecret } from '../utility/utility';
 @Controller('api/ranking')
 export class RankingController {
   constructor(private readonly apiService: RankingService) {}
@@ -34,6 +35,7 @@ export class RankingController {
     });
     return this.apiService.getRankingData({
       userNetID,
+      sessionSecret: getSessionSecret(),
       region,
       teamMode,
       rankingType,

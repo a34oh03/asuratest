@@ -83,9 +83,13 @@ export class PlayerMatchService {
       const brTrioStats = data.brTrioStats
         ? formatAggregateStatsBlock(data.brTrioStats, '트리오')
         : null;
+      const tagMatchStats = data.tagMatchStats
+        ? formatAggregateStatsBlock(data.tagMatchStats, '태그매치')
+        : null;
       const mostPlayedChampType = getMostPlayedChampionType(
         data.brSoloStats,
         data.brTrioStats,
+        data.tagMatchStats,
       );
       let mostPlayedChampName = null;
       if (mostPlayedChampType != null) {
@@ -96,6 +100,7 @@ export class PlayerMatchService {
       return {
         brSoloStats,
         brTrioStats,
+        tagMatchStats,
         mostPlayedChampType,
         mostPlayedChampName,
       };

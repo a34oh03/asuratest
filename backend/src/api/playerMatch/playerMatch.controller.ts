@@ -13,6 +13,7 @@ import { Response } from 'express';
 import { PlayerMatchService } from './playerMatch.service';
 import { ViewMatchStatsDto } from './dto/view-match-stats.dto';
 import { ViewMatchRecordDto } from './dto/view-match-record.dto';
+import { getSessionSecret } from '../utility/utility';
 
 // USER_NET_ID, SESSION_SECRET 환경변수로 분리 (예외처리 및 로깅)
 function getUserNetId(): string {
@@ -30,19 +31,7 @@ function getUserNetId(): string {
   }
 }
 
-function getSessionSecret(): string {
-  try {
-    const secret = process.env.SESSION_SECRET;
-    if (!secret) {
-      Logger.error('SESSION_SECRET 환경변수 미설정', 'PlayerMatchController');
-      throw new Error('SESSION_SECRET 환경변수 미설정');
-    }
-    return secret;
-  } catch (e) {
-    Logger.error(`SESSION_SECRET 예외: ${(e as Error).message}`, 'PlayerMatchController');
-    throw e;
-  }
-}
+
 
 // 할거 : 14분마다 ping 보내는거 확인하기, 12시 되면 데이터 백업 하는지 확인하기, 환경 변수로 값 등록하기, refresh session 추가하기
 @Controller('api/player-match')

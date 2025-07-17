@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { RankingSummaryService } from './ranking-summary.service';
-import { RateLimitGuard } from '../utility.ts/rate-limit.guard';
+import { RateLimitGuard } from '../utility/rate-limit.guard';
 
 @UseGuards(RateLimitGuard)
 @Controller('api/ranking')

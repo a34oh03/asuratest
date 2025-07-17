@@ -2,6 +2,7 @@ import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
 import { BackupService } from './backup.service';
 import { RankingService } from '../ranking.service';
 import { shouldBackupBasedOnTime } from '../ranking.util';
+import { getSessionSecret } from '../../utility/utility';
 
 @Controller('api/backup')
 export class BackupController {
@@ -41,6 +42,7 @@ export class BackupController {
       try {
         await this.rankingService.getRankingData({
           userNetID: uid,
+          sessionSecret: getSessionSecret(),
           teamMode: 1,
           region: 'ES',
           rankingType: 1,
@@ -60,21 +62,32 @@ export class BackupController {
     // 3. 성공한 validUid로 solo/trio 데이터 백업
     const soloData = await this.rankingService.getRankingData({
       userNetID: validUid,
+      sessionSecret: getSessionSecret(),
       teamMode: 1,
       region: 'ES',
       rankingType: 1,
       champType: 0,
-      rowCount: 100,
+      rowCount: 500,
     });
     const trioData = await this.rankingService.getRankingData({
       userNetID: validUid,
+      sessionSecret: getSessionSecret(),
       teamMode: 2,
       region: 'ES',
       rankingType: 1,
       champType: 0,
-      rowCount: 100,
+      rowCount: 500,
     });
-    const backupObj = { solo: soloData.players, trio: trioData.players };
+    const tagMatchData = await this.rankingService.getRankingData({
+      userNetID: validUid,
+      sessionSecret: getSessionSecret(),
+      teamMode: 2,
+      region: 'ES',
+      rankingType: 2,
+      champType: 0,
+      rowCount: 500,
+    });
+    const backupObj = { solo: soloData.players, trio: trioData.players, tagMatch: tagMatchData.players };
     const fs = await import('fs/promises');
     const backupPath = 'ranking_backup.json';
     await fs.writeFile(backupPath, JSON.stringify(backupObj, null, 2), {

@@ -18,6 +18,7 @@ import { Console } from "console";
 interface StatsData {
   brSoloStats: any;
   brTrioStats: any;
+  brTagMatchStats: any;
   mostPlayedChampType?: string;
   mostPlayedChampName?: string;
   // playedChamps는 각 stats 내부에 존재
@@ -234,6 +235,7 @@ function AllStats({
   const soloBaseRP = stats.brSoloStats?.rankPoint ?? 0;
   const trioBaseRP = stats.brTrioStats?.rankPoint ?? 0;
   const teamDeathMatchBaseRP = 0;
+  const tagMatchBaseRP = 0;
   const soloRecords = (record.matchRecords ?? []).filter(
     r => Number(r.teamMode) === 1
   );
@@ -245,6 +247,10 @@ function AllStats({
   const teamDeathMatchRecords = (record.matchRecords ?? []).filter(
     r => Number(r.teamMode) === 2 && 
          Number(r.matchMode) === 2
+  );
+  const tagMatchRecords = (record.matchRecords ?? []).filter(
+    r => Number(r.teamMode) === 2 && 
+         Number(r.matchMode) === 4
   );
   const allRecords = [...soloRecords, ...trioRecords, ...teamDeathMatchRecords]
   .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
@@ -335,12 +341,15 @@ function AllStats({
       ? getChampSummary(trioRecords)
       : mode === 'teamDeathMatch'
       ? getChampSummary(teamDeathMatchRecords)
+      : mode === 'tagMatch'
+      ? getChampSummary(tagMatchRecords)
       : getChampSummary(allRecords)
   const soloWithRP = calcTotalRP(soloRecords, soloBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
   const trioWithRP = calcTotalRP(trioRecords, trioBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
   const teamDeathMatchWithRP = calcTotalRP(teamDeathMatchRecords, teamDeathMatchBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+  const tagMatchWithRP = calcTotalRP(tagMatchRecords, tagMatchBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
   // 전체(솔로+트리오)를 모아서 시간 내림차순 정렬 → 최근 20개
-  const allWithRP = [...soloWithRP, ...trioWithRP, ...teamDeathMatchWithRP]
+  const allWithRP = [...soloWithRP, ...trioWithRP, ...teamDeathMatchWithRP, ...tagMatchWithRP]
     .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
   // ===================================================================
@@ -422,6 +431,8 @@ function AllStats({
       ? getRecentSummary(trioRecords)
       : mode === 'teamDeathMatch'
       ? getRecentSummary(teamDeathMatchRecords)
+      : mode === 'tagMatch'
+      ? getRecentSummary(tagMatchRecords)
       : getRecentSummary(allRecords)
 
   // 화면에 뿌릴 statsArr, recentRanks
@@ -451,6 +462,8 @@ function AllStats({
       ? trioWithRP
       : mode === 'teamDeathMatch'
       ? teamDeathMatchWithRP
+      : mode === 'tagMatch'
+      ? tagMatchWithRP
       : allWithRP;
 
   // ===================================================================
@@ -547,7 +560,16 @@ function AllStats({
               ? '최근 20경기'
               : mode === 'solo'
               ? '솔로 모드'
-              : '트리오 모드'}
+              : mode === 'trio'
+              ? '트리오 모드'
+              : mode === 'teamDeathMatch'
+              ? '팀 데스매치 모드'
+              : mode === 'tagMatch'
+              ? '태그매치 모드'
+              : '전체 모드'
+              
+              }
+
           </h2>
           <MatchRecordsBlockList
             records={recordsToShow}
@@ -572,15 +594,26 @@ function AllStats({
               locale={locale}
             />
           </div>
+          <div className="flex-1 min-w-[240px] mt-4">
+            <StatsBlock
+              title="태그매치 요약"
+              stats={stats.brTagMatchStats}
+              locale={locale}
+            />
+          </div>
         </div>
       ) : (
         <div className="mb-6">
           <StatsBlock
-            title={mode === 'solo' ? '솔로 요약' : '트리오 요약'}
+            title={mode === 'solo' ? '솔로 요약' : mode === 'trio' ? '트리오 요약' : mode === 'tagMatch' ? '태그매치 요약' : '전체 요약'}
             stats={
               mode === 'solo'
                 ? stats.brSoloStats!
-                : stats.brTrioStats!
+                : mode === 'trio'
+                ? stats.brTrioStats!
+                : mode === 'tagMatch'
+                ? stats.brTagMatchStats!
+                : stats.brSoloStats!
             }
             locale={locale}
           />
@@ -709,7 +742,7 @@ function MatchRecordsBlockList({
                   className="w-full h-full object-cover"
                 />
               </div>
-            ) : (rec.mode === '배틀로얄 - 트리오' || rec.mode === '팀 데스매치') ? (
+            ) : (rec.mode === '배틀로얄 - 트리오' || rec.mode === '팀 데스매치' || rec.mode === '태그매치') ? (
               // 트리오 모드: 메인 + 아군 2명
               <div className="flex items-center flex-shrink-0">
                 {/* 메인 챔피언 */}
@@ -796,7 +829,7 @@ function MatchRecordsBlockList({
 
             
             {/* 4) 장비 슬롯 */}
-            {rec.mode !== '팀 데스매치' ? (
+            {rec.mode !== '팀 데스매치' && rec.mode !== '태그매치' ? (
               rec.items ? (
                 <div className="grid grid-cols-3 gap-1">
                   {(() => {
