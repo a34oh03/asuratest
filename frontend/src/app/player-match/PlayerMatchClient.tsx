@@ -252,7 +252,7 @@ function AllStats({
     r => Number(r.teamMode) === 2 && 
          Number(r.matchMode) === 4
   );
-  const allRecords = [...soloRecords, ...trioRecords, ...teamDeathMatchRecords]
+  const allRecords = [...soloRecords, ...trioRecords, ...teamDeathMatchRecords, ...tagMatchRecords]
   .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 
   function getChampSummary(records: any[]) {
@@ -334,16 +334,21 @@ function AllStats({
       }));
   }
 
-  const champSummaryByMode = 
-    mode === 'solo'
-      ? getChampSummary(soloRecords)
-      : mode === 'trio'
-      ? getChampSummary(trioRecords)
-      : mode === 'teamDeathMatch'
-      ? getChampSummary(teamDeathMatchRecords)
-      : mode === 'tagMatch'
-      ? getChampSummary(tagMatchRecords)
-      : getChampSummary(allRecords)
+  const champSummaryByMode = (() => {
+    switch (mode) {
+      case 'solo':
+        return getChampSummary(soloRecords);
+      case 'trio':
+        return getChampSummary(trioRecords);
+      case 'teamDeathMatch':
+        return getChampSummary(teamDeathMatchRecords);
+      case 'tagMatch':
+        return getChampSummary(tagMatchRecords);
+      case 'all':
+      default:
+        return getChampSummary(allRecords);
+    }
+  })();
   const soloWithRP = calcTotalRP(soloRecords, soloBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
   const trioWithRP = calcTotalRP(trioRecords, trioBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
   const teamDeathMatchWithRP = calcTotalRP(teamDeathMatchRecords, teamDeathMatchBaseRP).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
@@ -469,11 +474,17 @@ function AllStats({
   // ===================================================================
   // 5) 순위 박스 색상 함수 (1~3등 강조)
   // ===================================================================
-  const boxClass = (n: number) => {
-    if (n === 1) return 'bg-yellow-200';
-    if (n === 2) return 'bg-blue-200';
-    if (n === 3) return 'bg-red-200';
-    return 'bg-gray-100';
+  const boxClass = (n: number, mode: string) => {
+    if (mode === 'tagMatch') {
+      if (n === 1) return 'bg-yellow-200';
+      if (n === 2) return 'bg-red-200';
+      return 'bg-gray-100';
+    } else {
+      if (n === 1) return 'bg-yellow-200';
+      if (n === 2) return 'bg-blue-200';
+      if (n === 3) return 'bg-red-200';
+      return 'bg-gray-100';
+    }
   };
 
   // ===================================================================
@@ -506,7 +517,8 @@ function AllStats({
             <div
               key={i}
               className={`w-8 h-8 flex items-center justify-center border rounded ${boxClass(
-                id
+                id,
+                mode
               )} font-medium`}
             >
               {id}
@@ -633,11 +645,11 @@ function StatsBlock({ title, stats, locale }: { title: string, stats: any, local
     <div className="p-4 bg-white rounded shadow border">
       <h3 className="font-semibold mb-2">{title}</h3>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-        <div>RP</div><div>{stats.rankPoint}</div>
+        <div>RP</div><div>{stats.rp}</div>
         <div>순위</div><div>{stats.rankPosition}</div>
         <div>경기수</div><div>{stats.matches}</div>
         <div>1등</div><div>{stats.firstRanks}</div>
-        <div>Top</div><div>{stats.topRanks}</div>
+       {/* <div>Top</div><div>{stats.topRanks}</div> */}
         <div>킬</div><div>{stats.kills}</div>
         <div>평균킬</div><div>{stats.avgKill}</div>
         <div>평균딜</div><div>{stats.avgDamagePut}</div>
