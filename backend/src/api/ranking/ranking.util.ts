@@ -16,22 +16,33 @@ export const championMap: Record<number, string> = {
   11: '카이사치',
   12: '레이',
   13: '웨이',
+  14: '브룬',
+  15: '에린',
   17: '쇼요',
 };
+
+// 챔피언 ID와 플레이 횟수를 저장할 타입
+export interface MostChamp {
+  champId: number;
+  playCount: number;
+  name: string;  // ← 챔피언 이름 문자열 (매핑 필요)
+}
 
 // --- 타입 선언부 ---
 export interface PlayerRaw {
   nickname?: string;
   score?: number | string;
-  champType?: number | string;
+  mostChamps: string; // <= 파싱 필요
   // iconDocKey, outfitFashion, titleDocKey 등
 }
+
+
 
 export interface PlayerSummary {
   rank: number;
   nickname: string;
   score: number;
-  champion: string;
+  mostChamps: MostChamp[];
 }
 
 export interface ChampionStats {
@@ -56,18 +67,15 @@ export function parsePlayers(playersRaw: PlayerRaw[]): PlayerSummary[] {
     const nScore = typeof rawScore === 'number' ? rawScore : Number(rawScore);
     const score  = Number.isFinite(nScore) ? nScore : 0;
 
-    // champType: 숫자 또는 숫자 문자열 → Number
-    const rawChamp = p.champType ?? 0;
-    const nChamp   = typeof rawChamp === 'number' ? rawChamp : Number(rawChamp);
-    const champId  = Number.isFinite(nChamp) ? nChamp : 0;
-
-    const champion = championMap[champId] ?? `알 수 없음(${champId})`;
+    // mostChamps
+    const rawMost = p.mostChamps ?? '';
+    const mostChamps = parseMostChamps(rawMost);
 
     players.push({
       rank:     idx + 1,
       nickname,
       score,
-      champion,
+      mostChamps,
     });
   });
 
@@ -75,29 +83,51 @@ export function parsePlayers(playersRaw: PlayerRaw[]): PlayerSummary[] {
 }
 
 
+function parseMostChamps(raw: string): MostChamp[] {
+  if (typeof raw !== 'string') return [];
+
+  return raw.split('|').map(entry => {
+    const [champStr, countStr] = entry.split(':');
+    const champId = Number(champStr);
+    const playCount = Number(countStr);
+
+    return {
+      champId,
+      playCount,
+      name: championMap[champId] ?? `알 수 없음(${champId})`,
+    };
+  }).filter(mc => Number.isFinite(mc.champId) && Number.isFinite(mc.playCount));
+}
+
 /**
  * playersRaw: API 로부터 받은 “원시” 플레이어 배열
  * 반환: 챔피언별 사용 통계를 담은 객체
+ */
+/**
+ * playersRaw: API 로부터 받은 “원시” 플레이어 배열
+ * 반환: 챔피언별 사용 통계를 담은 객체 (대표 챔피언 하나만 반영)
  */
 export function calculateChampionStats(playersRaw: PlayerRaw[]): ChampionStats {
   const counter: Record<number, number> = {};
 
   playersRaw.forEach(p => {
-    const rawChamp = p.champType ?? 0;
-    const nChamp   = typeof rawChamp === 'number' ? rawChamp : Number(rawChamp);
-    const cid      = Number.isFinite(nChamp) ? nChamp : 0;
+    const rawMost = p.mostChamps ?? '';
+    const mostList = parseMostChamps(rawMost);
 
-    counter[cid] = (counter[cid] || 0) + 1;
+    const mainChamp = mostList[0]; // 첫 번째만 사용
+    if (mainChamp) {
+      counter[mainChamp.champId] = (counter[mainChamp.champId] || 0) + 1;
+    }
   });
 
   // 모든 챔피언을 포함하도록 초기화
   const fullStats: Record<number, number> = {};
-  (Object.keys(championMap).map(k => Number(k))).forEach(cid => {
+  Object.keys(championMap).map(Number).forEach(cid => {
     fullStats[cid] = counter[cid] || 0;
   });
 
   // 내림차순 정렬
-  const sorted = (Object.entries(fullStats) as [string, number][])
+  const sorted = Object.entries(fullStats)
     .sort(([, a], [, b]) => b - a);
 
   const labels = sorted.map(([cid]) => 
@@ -110,14 +140,15 @@ export function calculateChampionStats(playersRaw: PlayerRaw[]): ChampionStats {
 
 
 
+
 export function getTopPlayersByChampion(
   players: any[],
 ): Record<string, string> {
   const topPlayers: Record<string, { nickname: string; score: number }> = {};
   for (const p of players) {
-    const champ = p.champion;
-    if (!topPlayers[champ] || p.score > topPlayers[champ].score) {
-      topPlayers[champ] = { nickname: p.nickname, score: p.score };
+    const mainChamp = p.mostChamps[0]?.name ?? '알 수 없음';
+    if (!topPlayers[mainChamp] || p.score > topPlayers[mainChamp].score) {
+      topPlayers[mainChamp] = { nickname: p.nickname, score: p.score };
     }
   }
   // 챔피언: 닉네임 형식으로 반환
@@ -142,12 +173,14 @@ export function compareRankings(prev: any[] = [], curr: any[] = []): any[] {
     const nickname = player.nickname;
     const nickname_raw = player.nickname;
     const score = player.score;
-    const champion = player.champion ?? '-';
+    const mostChamps = player.mostChamps
+    const champion = mostChamps[0]?.name ?? '-';
     if (!(nickname in prevMap)) {
       result.push({
         rank: curRank,
         nickname,
         nickname_raw,
+        mostChamps,
         champion,
         score,
         rank_change: 'new',
@@ -159,6 +192,7 @@ export function compareRankings(prev: any[] = [], curr: any[] = []): any[] {
         rank: curRank,
         nickname,
         nickname_raw,
+        mostChamps,
         champion,
         score,
         rank_change: prevRank - curRank,
