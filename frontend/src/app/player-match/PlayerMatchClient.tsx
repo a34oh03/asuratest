@@ -599,13 +599,14 @@ function AllStats({
               stats={stats.tagMatchStats}
               locale={locale}
             />
-  {/*        <div className="flex-1 min-w-[240px] mt-4">
+          <div className="flex-1 min-w-[240px] mt-4">
             <StatsBlock
               title="솔로 요약"
               stats={stats.brSoloStats}
               locale={locale}
             />
-          </div>*/}
+          </div>
+          {/*
           <div className="flex-1 min-w-[240px] mt-4">
             <StatsBlock
               title="트리오 요약"
@@ -613,6 +614,7 @@ function AllStats({
               locale={locale}
             />
           </div>
+          */}
           </div>
         </div>
       ) : (

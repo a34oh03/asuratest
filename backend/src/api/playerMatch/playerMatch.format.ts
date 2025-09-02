@@ -236,7 +236,7 @@ export function formatSingleMatchRecord(rec: any) {
 // mode 문자열을 결정하는 헬퍼 함수  
 function resolveMode(playMode: number, teamMode: number, matchMode: number): string {
   // 2-1) 솔로 모드  
-  if (playMode === 1 && teamMode === 1) {
+  if (playMode === 2 && teamMode === 1) {
     // "배틀로얄 - 솔로"
     return `${PLAY_MAP[playMode]} - ${TEAM_MAP[teamMode]}`;
   }

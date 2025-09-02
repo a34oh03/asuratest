@@ -79,6 +79,7 @@ export const ITEM_NAMES: Record<number, string> = {
 
 export const PLAY_MAP: Record<number, string> = {
   1: '배틀로얄',
+  2: '배틀로얄',
 };
 
 export const TEAM_MAP: Record<number, string> = {

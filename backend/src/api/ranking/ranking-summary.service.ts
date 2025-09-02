@@ -142,6 +142,11 @@ export class RankingSummaryService {
         ? `${p.nickname} 🌟`
         : p.nickname;
     }
+    for (const p of tagMatchPlayers) {
+      p.nickname = tagMatchRaw.topPlayersByChampion[p.champion] === p.nickname
+        ? `${p.nickname} 🌟`
+        : p.nickname;
+    }
 
     // 3) 최종 페이로드
     return {

@@ -107,9 +107,9 @@ export default function RankingClient() {
 
   const getModeTitle = () => {
     switch (mode) {
-      case 'solo': return '솔로를 빛낸 100명의 위인들';
-      case 'trio': return 'Top 100 랭커 (트리오)';
-      case 'tag': return 'Top 100 랭커 (태그매치)';
+      case 'solo': return 'Top 500 랭커 (솔로)';
+      case 'trio': return 'Top 500 랭커 (트리오)';
+      case 'tag': return 'Top 500 랭커 (태그매치)';
     }
   };
 
@@ -128,18 +128,19 @@ export default function RankingClient() {
         >
           태그매치
         </button>
+        {/*
         <button
           className={`px-4 py-2 rounded shadow ${mode === 'trio' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           onClick={() => setMode('trio')}
         >
           트리오
-        </button>
-  {/*      <button
+        </button> */}
+        <button
           className={`px-4 py-2 rounded shadow ${mode === 'solo' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           onClick={() => setMode('solo')}
         >
           솔로
-        </button>*/}
+        </button>
 
       </div>
 
@@ -167,17 +168,18 @@ export default function RankingClient() {
             title="자주 사용된 주 캐릭터 (태그매치)"
           />
         /*)*/}
-
+        {/*
         <ChampionBarChart
           labels={data.trio_stats.labels}
           counts={data.trio_stats.counts}
           title="자주 사용된 주 캐릭터 (트리오)"
         />
-  {/*      <ChampionBarChart
+        */}
+        <ChampionBarChart
           labels={data.solo_stats.labels}
           counts={data.solo_stats.counts}
           title="자주 사용된 주 캐릭터 (솔로)"
-        />*/}
+        />
 
       </div>
 
